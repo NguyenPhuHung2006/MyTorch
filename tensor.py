@@ -1,0 +1,50 @@
+import numpy as np
+from ops.arithmetic import *
+
+class Tensor:
+    def init(self, data, requires_grad=False, grad_fn=None):
+        self.data = np.asarray(data)
+        self.grad = None
+        self.requires_grad = requires_grad
+        self.grad_fn = grad_fn
+        
+    def __add__(self, other):
+        return Add.apply(self, other)
+    
+    def __sub__(self, other):
+        pass
+    
+    def __mul__(self, other):
+        pass
+    
+    def __matmul__(self, other):
+        pass
+    
+    def __neg__(self, other):
+        pass
+    
+    def __radd__(self, other):
+        pass
+    
+    def __rsub__(self, other):
+        pass
+    
+    def __rmul__(self, other):
+        pass
+    
+    def __rmatmul__(self, other):
+        pass
+    
+    def __iadd__(self, other):
+        pass
+    
+    def __isub__(self, other):
+        pass
+    
+    def __imul__(self, other):
+        pass
+    
+    def __imatmul__(self, other):
+        pass
+    
+        
