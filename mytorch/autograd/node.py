@@ -1,8 +1,5 @@
-from function import Function
-from context import Context
-
 class Node:
-    def __init__(self, function: Function, ctx: Context, parents=()):
+    def __init__(self, function, ctx, parents=()):
         self.function = function
         self.ctx = ctx
         self.parents = parents

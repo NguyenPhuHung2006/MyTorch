@@ -1,11 +1,12 @@
 from ..autograd.context import Context
 from ..autograd.node import Node
-from ..tensor import Tensor
 import numpy as np
 
 class Function:
     @classmethod
     def apply(cls, *args):
+        from ..tensor import Tensor
+        
         ctx = Context()
 
         out_data = cls.forward(ctx, *args)

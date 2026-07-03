@@ -1,9 +1,8 @@
 import numpy as np
-from ops.arithmetic import Add, Sub, Mul
-from autograd.engine import Engine
+from .autograd.engine import Engine
 
 class Tensor:
-    def init(self, data, requires_grad=False, grad_fn=None):
+    def __init__(self, data, requires_grad=False, grad_fn=None):
         self.data = np.asarray(data)
         self.grad = None
         self.requires_grad = requires_grad
@@ -13,12 +12,15 @@ class Tensor:
         Engine().backward(self)
         
     def __add__(self, other):
+        from .ops.arithmetic import Add
         return Add.apply(self, other)
     
     def __sub__(self, other):
+        from .ops.arithmetic import Sub
         return Sub.apply(self, other)
     
     def __mul__(self, other):
+        from .ops.arithmetic import Mul
         return Mul.apply(self, other)
     
     def __matmul__(self, other):
