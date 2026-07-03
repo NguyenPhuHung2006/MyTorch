@@ -2,6 +2,7 @@ from ..autograd.function import Function
 from ..autograd.context import Context
 from ..tensor import Tensor
 import numpy as np
+from ..autograd.utils import unbroadcast
 
 class Add(Function):
     @staticmethod
@@ -15,13 +16,18 @@ class Add(Function):
 
     @staticmethod
     def backward(ctx, grad_output: np.ndarray):
-        grad_x = grad_output
-        grad_y = (
-            grad_output
-            if ctx.saved_data["y_is_tensor"]
-            else None
+        grad_x = unbroadcast(
+            grad_output,
+            ctx.saved_data["x_shape"]
         )
-            
+
+        grad_y = None
+        if ctx.saved_data["y_is_tensor"]:
+            grad_y = unbroadcast(
+                grad_output,
+                ctx.saved_data["y_shape"]
+            )
+
         return grad_x, grad_y
 
 class Sub(Function):
@@ -36,13 +42,18 @@ class Sub(Function):
         
     @staticmethod
     def backward(ctx: Context, grad_output: np.ndarray):
-        grad_x = grad_output
-        grad_y = (
-            -grad_output
-            if ctx.saved_data["y_is_tensor"]
-            else None
+        grad_x = unbroadcast(
+            grad_output,
+            ctx.saved_data["x_shape"]
         )
-        
+
+        grad_y = None
+        if ctx.saved_data["y_is_tensor"]:
+            grad_y = unbroadcast(
+                -grad_output,
+                ctx.saved_data["y_shape"]
+            )
+
         return grad_x, grad_y
 
 class Mul(Function):
@@ -50,6 +61,7 @@ class Mul(Function):
     def forward(ctx: Context, x: Tensor, y):
         ctx.save_for_backward(x)
         ctx.saved_data["y"] = y
+        ctx.saved_data["y_is_tensor"] = isinstance(y, Tensor)
         ctx.saved_data["x_shape"] = x.data.shape
         ctx.saved_data["y_shape"] = (
             y.data.shape if isinstance(y, Tensor) else None
@@ -60,11 +72,24 @@ class Mul(Function):
     def backward(ctx: Context, grad_output: np.ndarray):
         x, = ctx.saved_tensors
         y = ctx.saved_data["y"]
+        y_is_tensor = ctx.saved_data["y_is_tensor"]
+        
         grad_x = grad_output * (
-            y.data if isinstance(y, Tensor) else y
+            y.data if y_is_tensor else y
         )
         grad_y = None
-        if isinstance(y, Tensor):
+        if y_is_tensor:
             grad_y = grad_output * x.data
             
+        grad_x = unbroadcast(
+            grad_x,
+            ctx.saved_data["x_shape"]
+        )
+
+        if y_is_tensor and grad_y is not None:
+            grad_y = unbroadcast(
+                grad_y,
+                ctx.saved_data["y_shape"]
+            )
+
         return grad_x, grad_y
