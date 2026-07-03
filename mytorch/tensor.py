@@ -1,5 +1,4 @@
 import numpy as np
-from .autograd.engine import Engine
 
 class Tensor:
     def __init__(self, data, requires_grad=False, grad_fn=None):
@@ -9,6 +8,7 @@ class Tensor:
         self.grad_fn = grad_fn
         
     def backward(self):
+        from .autograd.engine import Engine
         Engine().backward(self)
         
     def __add__(self, other):
