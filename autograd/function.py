@@ -1,7 +1,7 @@
 from ..autograd.context import Context
 from ..autograd.node import Node
 from ..tensor import Tensor
-from numpy import np
+import numpy as np
 
 class Function:
     @classmethod
@@ -35,5 +35,5 @@ class Function:
         pass
     
     @staticmethod
-    def backward(ctx: Context, grad_output):
+    def backward(ctx: Context, grad_output: np.ndarray):
         pass
