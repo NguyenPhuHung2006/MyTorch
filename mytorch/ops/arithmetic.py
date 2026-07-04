@@ -6,7 +6,7 @@ from ..autograd.utils import unbroadcast
 
 class Add(Function):
     @staticmethod
-    def forward(ctx, x: Tensor, y):
+    def forward(ctx: Context, x: Tensor, y):
         ctx.saved_data["y_is_tensor"] = isinstance(y, Tensor)
         ctx.saved_data["x_shape"] = x.data.shape
         ctx.saved_data["y_shape"] = (
@@ -15,7 +15,7 @@ class Add(Function):
         return x.data + (y.data if isinstance(y, Tensor) else y)
 
     @staticmethod
-    def backward(ctx, grad_output: np.ndarray):
+    def backward(ctx: Context, grad_output: np.ndarray):
         grad_x = unbroadcast(
             grad_output,
             ctx.saved_data["x_shape"]
