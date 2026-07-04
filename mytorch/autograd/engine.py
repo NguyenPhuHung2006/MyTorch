@@ -5,9 +5,9 @@ class Engine:
     def __init__(self):
         pass
     
-    def backward(self, loss: Tensor):
+    def backward(self, loss: Tensor, init_grad: np.ndarray | None):
         topo = self.sort_topo(loss)
-        loss.grad = np.ones_like(loss.data)
+        loss.grad = np.ones_like(loss.data) if init_grad is None else init_grad
         
         for tensor in reversed(topo):
             if tensor.grad_fn is None:

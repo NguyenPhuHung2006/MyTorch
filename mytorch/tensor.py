@@ -7,9 +7,9 @@ class Tensor:
         self.requires_grad = requires_grad
         self.grad_fn = grad_fn
         
-    def backward(self):
+    def backward(self, init_grad: np.ndarray | None = None):
         from .autograd.engine import Engine
-        Engine().backward(self)
+        Engine().backward(self, init_grad)
         
     def __add__(self, other):
         from .ops.arithmetic import Add
@@ -53,8 +53,19 @@ class Tensor:
     def __imatmul__(self, other):
         pass
     
-    def sum(self, axis=None, keepdims=False):
+    def sum(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
         from .ops.reductions import Sum
         return Sum.apply(self, axis, keepdims)
     
+    def mean(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
+        from .ops.reductions import Mean
+        return Mean.apply(self, axis, keepdims)
+    
+    def max(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
+        from .ops.reductions import Max
+        return Max.apply(self, axis, keepdims)
+    
+    def min(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
+        from .ops.reductions import Min
+        return Min.apply(self, axis, keepdims)
         
