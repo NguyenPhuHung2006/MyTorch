@@ -53,4 +53,8 @@ class Tensor:
     def __imatmul__(self, other):
         pass
     
+    def sum(self, axis=None, keepdims=False):
+        from .ops.reductions import Sum
+        return Sum.apply(self, axis, keepdims)
+    
         
