@@ -59,7 +59,7 @@ class Sub(Function):
 class Mul(Function):
     @staticmethod
     def forward(ctx: Context, x: Tensor, y):
-        ctx.save_for_backward(x)
+        ctx.saved_data["x_data"] = x.data
         ctx.saved_data["y"] = y
         ctx.saved_data["y_is_tensor"] = isinstance(y, Tensor)
         ctx.saved_data["x_shape"] = x.data.shape
@@ -70,7 +70,7 @@ class Mul(Function):
         
     @staticmethod
     def backward(ctx: Context, grad_output: np.ndarray):
-        x, = ctx.saved_tensors
+        x_data = ctx.saved_data["x_data"]
         y = ctx.saved_data["y"]
         y_is_tensor = ctx.saved_data["y_is_tensor"]
         
@@ -79,7 +79,7 @@ class Mul(Function):
         )
         grad_y = None
         if y_is_tensor:
-            grad_y = grad_output * x.data
+            grad_y = grad_output * x_data
             
         grad_x = unbroadcast(
             grad_x,
