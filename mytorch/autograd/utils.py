@@ -1,4 +1,6 @@
-def unbroadcast(grad, shape):
+import numpy as np
+
+def unbroadcast(grad: np.ndarray, shape: tuple[int, ...]):
     while grad.ndim > len(shape):
         grad = grad.sum(axis=0)
             
