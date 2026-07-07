@@ -9,4 +9,12 @@ def unbroadcast(grad: np.ndarray, shape: tuple[int, ...]):
             grad = grad.sum(axis=axis, keepdims=True)
 
     return grad
+
+def matrix_transpose(A):
+    A = np.asarray(A)
+
+    if A.ndim < 2:
+        return A
+
+    return np.swapaxes(A, -1, -2)
     

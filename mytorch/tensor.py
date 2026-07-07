@@ -24,7 +24,8 @@ class Tensor:
         return Mul.apply(self, other)
     
     def __matmul__(self, other):
-        pass
+        from .ops.linalg import MatMul
+        return MatMul.apply(self, other)
     
     def __neg__(self, other):
         pass
