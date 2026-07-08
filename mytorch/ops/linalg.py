@@ -2,7 +2,7 @@ from ..autograd.function import Function
 from ..autograd.context import Context
 from ..tensor import Tensor
 import numpy as np
-from ..autograd.utils import matrix_transpose, unbroadcast
+from ..autograd.utils import transpose_last_two_dims, unbroadcast
 
 class MatMul(Function):
     @staticmethod
@@ -38,8 +38,8 @@ class MatMul(Function):
         elif y_ndim == 1:
             grad_output = np.expand_dims(grad_output, -1)
         
-        grad_x = grad_output @ matrix_transpose(y_data)
-        grad_y = matrix_transpose(x_data) @ grad_output if y_is_tensor else None
+        grad_x = grad_output @ transpose_last_two_dims(y_data)
+        grad_y = transpose_last_two_dims(x_data) @ grad_output if y_is_tensor else None
         
         if x_ndim == 1:
             grad_x = np.squeeze(grad_x, axis=-2)

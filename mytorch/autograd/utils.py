@@ -10,7 +10,7 @@ def unbroadcast(grad: np.ndarray, shape: tuple[int, ...]):
 
     return grad
 
-def matrix_transpose(A):
+def transpose_last_two_dims(A):
     A = np.asarray(A)
 
     if A.ndim < 2:
