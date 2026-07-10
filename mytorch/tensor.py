@@ -73,4 +73,16 @@ class Tensor:
     def relu(self):
         from .ops.activation import ReLU
         return ReLU.apply(self)
+    
+    def sigmoid(self):
+        from .ops.activation import Sigmoid
+        return Sigmoid.apply(self)
+    
+    def softmax(self, dim: int | None = -1):
+        from .ops.activation import Softmax
+        return Softmax.apply(self, dim)
+    
+    def log_softmax(self, dim: int | None = -1):
+        from .ops.activation import LogSoftmax
+        return LogSoftmax.apply(self, dim)
         
