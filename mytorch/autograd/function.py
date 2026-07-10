@@ -8,12 +8,17 @@ class Function:
     def apply(cls, *args):
         ctx = Context()
 
-        out_data = cls.forward(ctx, *args)
+        raw_args = [
+            arg.data if isinstance(arg, Tensor) else arg
+            for arg in args
+        ]
+
+        out_data = cls.forward(ctx, *raw_args)
 
         requires_grad = any(
-            t.requires_grad
-            for t in args
-            if isinstance(t, Tensor)
+            arg.requires_grad
+            for arg in args
+            if isinstance(arg, Tensor)
         )
 
         node = None

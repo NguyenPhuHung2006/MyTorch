@@ -69,4 +69,8 @@ class Tensor:
     def min(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
         from .ops.reductions import Min
         return Min.apply(self, axis, keepdims)
+    
+    def relu(self):
+        from .ops.activation import ReLU
+        return ReLU.apply(self)
         

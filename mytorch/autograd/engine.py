@@ -16,7 +16,7 @@ class Engine:
             grads = tensor.grad_fn.backward(tensor.grad)
             
             for parent, grad in zip(tensor.grad_fn.parents, grads):
-                if grad is None or not parent.requires_grad:
+                if not isinstance(parent, Tensor) or not parent.requires_grad:
                     continue
                 if parent.grad is None:
                     parent.grad = grad
