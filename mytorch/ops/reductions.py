@@ -1,5 +1,4 @@
 from ..autograd.function import Function
-from ..tensor import Tensor
 import numpy as np
 from ..autograd.context import Context
 import math

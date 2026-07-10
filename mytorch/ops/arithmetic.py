@@ -1,6 +1,5 @@
 from ..autograd.function import Function
 from ..autograd.context import Context
-from ..tensor import Tensor
 import numpy as np
 from ..autograd.utils import unbroadcast
 
@@ -19,7 +18,7 @@ class Add(Function):
 
 class Sub(Function):
     @staticmethod
-    def forward(ctx: Context, x: Tensor, y):
+    def forward(ctx: Context, x, y):
         ctx.saved_data["x_shape"] = np.shape(x)
         ctx.saved_data["y_shape"] = np.shape(y)
         return x - y
