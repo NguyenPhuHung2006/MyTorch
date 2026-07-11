@@ -100,4 +100,16 @@ class Tensor:
             return self
         from .ops.movement import Transpose
         return Transpose.apply(self, -2, -1)
+    
+    @property
+    def shape(self):
+        return self.data.shape
+
+    @property
+    def ndim(self):
+        return self.data.ndim
+
+    @property
+    def dtype(self):
+        return self.data.dtype
         
