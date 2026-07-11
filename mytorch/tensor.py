@@ -31,28 +31,36 @@ class Tensor:
         pass
     
     def __radd__(self, other):
-        pass
+        from .ops.arithmetic import Add
+        return Add.apply(self, other)
     
     def __rsub__(self, other):
-        pass
+        from .ops.arithmetic import Sub
+        return Sub.apply(other, self)
     
     def __rmul__(self, other):
-        pass
+        from .ops.arithmetic import Mul
+        return Mul.apply(self, other)
     
     def __rmatmul__(self, other):
-        pass
+        from .ops.linalg import MatMul
+        return MatMul.apply(other, self)
     
     def __iadd__(self, other):
-        pass
+        from .ops.arithmetic import Add
+        return Add.apply(self, other)
     
     def __isub__(self, other):
-        pass
+        from .ops.arithmetic import Sub
+        return Sub.apply(self, other)
     
     def __imul__(self, other):
-        pass
+        from .ops.arithmetic import Mul
+        return Mul.apply(self, other)
     
     def __imatmul__(self, other):
-        pass
+        from .ops.linalg import MatMul
+        return MatMul.apply(self, other)
     
     def sum(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
         from .ops.reductions import Sum
@@ -85,4 +93,11 @@ class Tensor:
     def log_softmax(self, dim: int | None = -1):
         from .ops.activation import LogSoftmax
         return LogSoftmax.apply(self, dim)
+    
+    @property
+    def T(self):
+        if (self.data.ndim < 2):
+            return self
+        from .ops.movement import Transpose
+        return Transpose.apply(self, -2, -1)
         
