@@ -1,4 +1,4 @@
-from module import Module
+from .module import Module
 
 class ModuleList(Module):
     def __init__(self, modules=()):

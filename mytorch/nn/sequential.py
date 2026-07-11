@@ -1,5 +1,5 @@
-from module import Module
-from mytorch.nn.containers import ModuleList
+from .module import Module
+from .containers import ModuleList
 
 class Sequential(Module):
     def __init__(self, *layers):
