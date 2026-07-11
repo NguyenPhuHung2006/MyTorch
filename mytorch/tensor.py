@@ -27,8 +27,8 @@ class Tensor:
         from .ops.linalg import MatMul
         return MatMul.apply(self, other)
     
-    def __neg__(self, other):
-        pass
+    def __neg__(self):
+        return self * -1
     
     def __radd__(self, other):
         from .ops.arithmetic import Add
