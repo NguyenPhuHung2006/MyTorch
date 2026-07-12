@@ -42,16 +42,24 @@ class Module:
         raise NotImplementedError
 
     def parameters(self):
-        pass
+        for module in self.modules():
+            yield from module._parameters.values()
 
     def children(self):
-        pass
+        yield from self._modules.values()
 
     def modules(self):
-        pass
+        yield self
+
+        for child in self.children():
+            yield from child.modules()
 
     def train(self):
-        pass
+        for module in self.modules():
+            module.training = True
+        return self
 
     def eval(self):
-        pass
+        for module in self.modules():
+            module.training = False
+        return self
