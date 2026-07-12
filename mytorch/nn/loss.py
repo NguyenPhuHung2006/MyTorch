@@ -20,4 +20,5 @@ class Loss(Module):
     
 class MSELoss(Loss):
     def forward(self, pred, target):
-        return self.reduce((pred - target) ** 2)
+        loss = (pred - target) ** 2
+        return self.reduce(loss)
