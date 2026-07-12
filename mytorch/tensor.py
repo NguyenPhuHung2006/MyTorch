@@ -103,10 +103,12 @@ class Tensor:
         return LogSoftmax.apply(self, dim)
     
     def exp(self):
-        pass
+        from .ops.unary import Exp
+        return Exp.apply(self)
     
     def log(self):
-        pass
+        from .ops.unary import Log
+        return Log.apply(self)
     
     @property
     def T(self):
