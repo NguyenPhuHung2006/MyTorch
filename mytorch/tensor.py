@@ -117,6 +117,12 @@ class Tensor:
         from .ops.movement import Transpose
         return Transpose.apply(self, -2, -1)
     
+    def transpose(self, dim0: int = -2, dim1: int = -1):
+        if (self.data.ndim < 2):
+            return self
+        from .ops.movement import Transpose
+        return Transpose.apply(self, dim0, dim1)
+    
     @property
     def shape(self):
         return self.data.shape
