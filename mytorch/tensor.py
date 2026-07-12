@@ -30,6 +30,14 @@ class Tensor:
     def __neg__(self):
         return self * -1
     
+    def __pow__(self, other):
+        from .ops.arithmetic import Pow
+        return Pow.apply(self, other)
+    
+    def __truediv__(self, other):
+        from .ops.arithmetic import TrueDiv
+        return TrueDiv.apply(self, other)
+    
     def __radd__(self, other):
         from .ops.arithmetic import Add
         return Add.apply(self, other)
@@ -93,6 +101,12 @@ class Tensor:
     def log_softmax(self, dim: int | None = -1):
         from .ops.activation import LogSoftmax
         return LogSoftmax.apply(self, dim)
+    
+    def exp(self):
+        pass
+    
+    def log(self):
+        pass
     
     @property
     def T(self):
