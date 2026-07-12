@@ -11,6 +11,10 @@ class ModuleList(Module):
             str(len(self)), 
             module
         )
+        
+    def extend(self, modules):
+        for module in modules:
+            self.append(module)
             
     def __iter__(self):
         return iter(self._modules.values())
