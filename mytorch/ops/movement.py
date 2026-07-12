@@ -13,4 +13,5 @@ class Transpose(Function):
     def backward(ctx: Context, grad_output: np.ndarray):
         dim0 = ctx.saved_data["dim0"]
         dim1 = ctx.saved_data["dim1"]
-        return np.swapaxes(grad_output, dim0, dim1)
+        grad_x = np.swapaxes(grad_output, dim0, dim1)
+        return (grad_x,) 
