@@ -63,3 +63,17 @@ class Module:
         for module in self.modules():
             module.training = False
         return self
+    
+    def zero_grad(self):
+        for p in self.parameters():
+            p.grad = None
+            
+    def named_parameters(self):
+        def dfs(module, prefix=""):
+            for name, param in module._parameters.items():
+                yield (f"{prefix}.{name}" if prefix else name), param
+
+            for name, child in module._modules.items():
+                yield from dfs(child, f"{prefix}.{name}" if prefix else name)
+
+        yield from dfs(self)
