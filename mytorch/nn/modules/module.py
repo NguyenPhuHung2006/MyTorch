@@ -38,8 +38,10 @@ class Module:
             raise TypeError(f"{parameter} is not a Parameter")
         self._parameters[name] = parameter
         
-    def forward(self, *args):
-        raise NotImplementedError
+    def forward(self, *args, **kwargs):
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement forward()."
+        )
 
     def parameters(self):
         for module in self.modules():
