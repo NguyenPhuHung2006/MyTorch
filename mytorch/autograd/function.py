@@ -1,6 +1,6 @@
-from ..autograd.context import Context
+from .context import Context
 from ..tensor import Tensor
-from ..autograd.node import Node
+from .node import Node
 import numpy as np
 
 class Function:

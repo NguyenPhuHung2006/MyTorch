@@ -1,4 +1,4 @@
-from .module import Module
+from ..modules import Module
 
 class Loss(Module):
     def __init__(self, reduction="mean"):
@@ -17,8 +17,3 @@ class Loss(Module):
 
     def reduce(self, loss):
         return self._reductions[self.reduction](loss)
-    
-class MSELoss(Loss):
-    def forward(self, pred, target):
-        loss = (pred - target) ** 2
-        return self.reduce(loss)

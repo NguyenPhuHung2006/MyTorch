@@ -1,7 +1,8 @@
 from ..autograd.function import Function
 from ..autograd.context import Context
 import numpy as np
-from ..autograd.utils import transpose_last_two_dims, unbroadcast
+from ..utils.broadcast import unbroadcast
+from ..utils.linalg import transpose_last_two_dims
 
 class MatMul(Function):
     @staticmethod

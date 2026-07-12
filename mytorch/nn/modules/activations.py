@@ -1,5 +1,5 @@
 from .module import Module
-from ..tensor import Tensor
+from ...tensor import Tensor
 
 class ReLU(Module):
     def forward(self, x: Tensor):

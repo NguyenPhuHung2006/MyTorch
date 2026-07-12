@@ -1,7 +1,7 @@
 from ..autograd.function import Function
 from ..autograd.context import Context
 import numpy as np
-from ..autograd.utils import unbroadcast
+from ..utils.broadcast import unbroadcast
 
 class Add(Function):
     @staticmethod
