@@ -1,10 +1,6 @@
-from ..tensor import Tensor
-from ..nn.modules.sequential import Sequential
-from ..nn.modules.module import Module
-from ..nn.modules.linear import Linear
-from ..nn.modules.activations import ReLU
-from ..nn.modules.loss import BCEWithLogitsLoss
-from ..optim.sgd import SGD
+import mytorch.nn as nn
+import mytorch as torch
+import mytorch.optim as optim
 
 x = [
     [1, 0],
@@ -15,26 +11,26 @@ x = [
 
 y = [[1], [1], [0], [0]]
 
-x = Tensor(x)
-y = Tensor(y)
+x = torch.Tensor(x)
+y = torch.Tensor(y)
 
-class XorSolver(Module):
+class XorSolver(nn.Module):
     def __init__(self):
         super().__init__()
-        self.layer = Sequential(
-            Linear(2, 3),
-            ReLU(),
-            Linear(3, 3),
-            ReLU(),
-            Linear(3, 1)
+        self.layer = nn.Sequential(
+            nn.Linear(2, 3),
+            nn.ReLU(),
+            nn.Linear(3, 3),
+            nn.ReLU(),
+            nn.Linear(3, 1)
         )
     def forward(self, x):
         return self.layer(x)
     
 EPOCHS = 10000
 model = XorSolver()
-criterion = BCEWithLogitsLoss()
-optimizer = SGD(model.parameters(), lr=1e-2)
+criterion = nn.BCEWithLogitsLoss()
+optimizer = optim.SGD(model.parameters(), lr=1e-2)
 for i in range(EPOCHS):
     optimizer.zero_grad()
     

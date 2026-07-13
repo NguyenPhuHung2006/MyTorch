@@ -2,7 +2,7 @@ import numpy as np
 from mytorch.tensor import Tensor
 from mytorch.nn.modules.module import Module
 from mytorch.nn.modules.linear import Linear
-from mytorch.parameter import Parameter
+from mytorch.nn.parameter import Parameter
 
 class Dummy(Module):
     def __init__(self):

@@ -1,6 +1,5 @@
 from ..autograd.function import Function
 from ..autograd.context import Context
-from ..tensor import Tensor
 import numpy as np
 from ..utils.broadcast import unbroadcast
 
