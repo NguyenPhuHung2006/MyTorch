@@ -59,10 +59,10 @@ def test_parameters_returns_all_parameters():
 
     assert len(params) == 4
 
-    assert model.fc1.weight in params
-    assert model.fc1.bias in params
-    assert model.fc2.weight in params
-    assert model.fc2.bias in params
+    assert any(p is model.fc1.weight for p in params)
+    assert any(p is model.fc1.bias for p in params)
+    assert any(p is model.fc2.weight for p in params)
+    assert any(p is model.fc2.bias for p in params)
 
 
 def test_parameters_are_parameter_objects():

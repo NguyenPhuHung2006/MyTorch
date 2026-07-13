@@ -72,11 +72,10 @@ def test_parameters():
 
     assert len(params) == 4
 
-    assert l1.weight in params
-    assert l1.bias in params
-    assert l2.weight in params
-    assert l2.bias in params
-
+    assert any(p is l1.weight for p in params)
+    assert any(p is l1.bias for p in params)
+    assert any(p is l2.weight for p in params)
+    assert any(p is l2.bias for p in params)
 
 def test_named_parameters():
     modules = ModuleList([

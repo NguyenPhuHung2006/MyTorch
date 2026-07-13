@@ -131,4 +131,9 @@ class Min(Function):
 
         return grad_x, None, None
             
-            
+class Any(Function):
+    differentiable = False
+
+    @staticmethod
+    def forward(ctx: Context, x, dim, keepdim):
+        return np.any(x, axis=dim, keepdims=keepdim)

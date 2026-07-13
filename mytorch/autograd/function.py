@@ -4,6 +4,9 @@ from .node import Node
 import numpy as np
 
 class Function:
+    
+    differentiable = True
+    
     @classmethod
     def apply(cls, *args):
         ctx = Context()
@@ -15,10 +18,13 @@ class Function:
 
         out_data = cls.forward(ctx, *raw_args)
 
-        requires_grad = any(
-            arg.requires_grad
-            for arg in args
-            if isinstance(arg, Tensor)
+        requires_grad = (
+            cls.differentiable 
+            and any(
+                arg.requires_grad
+                for arg in args
+                if isinstance(arg, Tensor)
+            )
         )
 
         node = None

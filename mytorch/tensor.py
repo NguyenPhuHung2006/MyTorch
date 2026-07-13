@@ -70,6 +70,44 @@ class Tensor:
         from .ops.linalg import MatMul
         return MatMul.apply(self, other)
     
+    def __lt__(self, other):
+        from .ops.comparison import Lt
+        return Lt.apply(self, other)
+    
+    def __le__(self, other):
+        from .ops.comparison import Le
+        return Le.apply(self, other)
+    
+    def __gt__(self, other):
+        from .ops.comparison import Gt
+        return Gt.apply(self, other)
+    
+    def __ge__(self, other):
+        from .ops.comparison import Ge
+        return Ge.apply(self, other)
+    
+    def __eq__(self, value):
+        from .ops.comparison import Eq
+        return Eq.apply(self, value)
+    
+    def __ne__(self, value):
+        from .ops.comparison import Ne
+        return Ne.apply(self, value)
+    
+    def __hash__(self):
+        return id(self)
+    
+    def __bool__(self):
+        if self.numel() != 1:
+            raise RuntimeError(
+                "Boolean value of Tensor with more than one value is ambiguous"
+            )
+
+        return bool(self.data.item())
+    
+    def numel(self):
+        return np.size(self.data)
+    
     def sum(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
         from .ops.reductions import Sum
         return Sum.apply(self, axis, keepdims)
@@ -85,6 +123,10 @@ class Tensor:
     def min(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
         from .ops.reductions import Min
         return Min.apply(self, axis, keepdims)
+    
+    def any(self, dim: int | None = None, keepdims: bool = False):
+        from .ops.reductions import Any
+        return Any.apply(self, dim, keepdims)
     
     def relu(self):
         from .ops.activation import ReLU
