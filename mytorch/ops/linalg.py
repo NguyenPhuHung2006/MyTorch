@@ -32,16 +32,19 @@ class MatMul(Function):
         elif y_ndim == 1:
             grad_output = np.expand_dims(grad_output, -1)
         
-        grad_x = grad_output @ transpose_last_two_dims(y)
-        grad_y = transpose_last_two_dims(x) @ grad_output
+        grad_x = grad_y = None
         
-        if x_ndim == 1:
-            grad_x = np.squeeze(grad_x, axis=-2)
-        if y_ndim == 1:
-            grad_y = np.squeeze(grad_y, axis=-1)
+        if ctx.needs_input_grad[0]:
+            grad_x = grad_output @ transpose_last_two_dims(y)
+            if x_ndim == 1:
+                grad_x = np.squeeze(grad_x, axis=-2)
+            grad_x = unbroadcast(grad_x, ctx.saved_data["x_shape"])
             
-        grad_x = unbroadcast(grad_x, ctx.saved_data["x_shape"])
-        grad_y = unbroadcast(grad_y, ctx.saved_data["y_shape"])
+        if ctx.needs_input_grad[1]:
+            grad_y = transpose_last_two_dims(x) @ grad_output
+            if y_ndim == 1:
+                grad_y = np.squeeze(grad_y, axis=-1)
+            grad_y = unbroadcast(grad_y, ctx.saved_data["y_shape"])
         
         return grad_x, grad_y
         

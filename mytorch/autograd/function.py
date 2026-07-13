@@ -10,6 +10,11 @@ class Function:
     @classmethod
     def apply(cls, *args):
         ctx = Context()
+        
+        ctx.needs_input_grad = tuple(
+            isinstance(arg, Tensor) and arg.requires_grad
+            for arg in args
+        )
 
         raw_args = [
             arg.data if isinstance(arg, Tensor) else arg
