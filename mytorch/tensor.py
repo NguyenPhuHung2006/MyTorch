@@ -105,6 +105,10 @@ class Tensor:
 
         return bool(self.data.item())
     
+    def __getitem__(self, index):
+        from .ops.movement import GetItem
+        return GetItem.apply(self, index)
+    
     def numel(self):
         return np.size(self.data)
     
