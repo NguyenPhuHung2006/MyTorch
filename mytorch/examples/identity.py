@@ -25,24 +25,42 @@ class IdentitySolver(nn.Module):
         return self.layer(x)
     
 EPOCHS = 10000
-model = IdentitySolver()
 criterion = nn.MSELoss()
-optimizer = optim.SGD(model.parameters(), lr=1e-3)
-for i in range(EPOCHS):
-    optimizer.zero_grad()
+# model = IdentitySolver()
+# optimizer = optim.SGD(model.parameters(), lr=1e-3)
+# for i in range(EPOCHS):
+#     optimizer.zero_grad()
     
-    preds = model(x)
-    loss = criterion(preds, y)
+#     preds = model(x)
+#     loss = criterion(preds, y)
     
-    loss.backward()    
-    optimizer.step()
+#     loss.backward()    
+#     optimizer.step()
     
-    print(f"{i}, {loss.data}")
+#     print(f"{i}, {loss.data}")
     
-preds = model(x).data
-errors = np.abs(preds - y.data)
+# preds = model(x).data
+# errors = np.abs(preds - y.data)
 
-print(f"max: {errors.max()}")
-print(f"mean: {errors.mean()}")
+# print(f"max: {errors.max()}")
+# print(f"mean: {errors.mean()}")
+
+RUN = 10
+for run in range(RUN):
+    model = IdentitySolver()
+    optimizer = optim.Adam(model.parameters(), lr=1e-2)
+    model.zero_grad()
+    for i in range(EPOCHS):
+        optimizer.zero_grad()
+    
+        logits = model(x)
+        loss = criterion(logits, y)
+        
+        loss.backward()    
+        optimizer.step()
+        
+    preds = model(x).data
+    errors = np.abs(preds - y.data)
+    print(f"{run}, max: {errors.max():.5}, min: {errors.min():.5}")
 
 
