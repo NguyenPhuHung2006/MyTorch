@@ -111,6 +111,13 @@ class Tensor:
     
     def numel(self):
         return np.size(self.data)
+
+    def item(self):
+        if self.data.size != 1:
+            raise ValueError(
+                "Can only convert a Tensor with one element to a Python scalar."
+            )
+        return self.data.item()
     
     def sum(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
         from .ops.reductions import Sum
