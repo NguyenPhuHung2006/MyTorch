@@ -187,4 +187,7 @@ class Tensor:
     @property
     def dtype(self):
         return self.data.dtype
+    
+    def numpy(self):
+        return self.data
         

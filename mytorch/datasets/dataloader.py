@@ -1,5 +1,6 @@
 from .dataset import Dataset
 import numpy as np
+from ..tensor import Tensor
 
 class DataLoader:
     def __init__(
@@ -39,6 +40,8 @@ class DataLoader:
         x, y = zip(*batch)
         x = np.stack(x)
         y = np.array(y)
+        x = Tensor(x)
+        y = Tensor(y)
         return x, y
     
     def __len__(self):
