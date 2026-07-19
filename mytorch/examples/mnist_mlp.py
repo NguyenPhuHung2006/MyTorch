@@ -12,6 +12,7 @@ class MNISTDataset(Dataset):
         images = dataset.images
         labels = dataset.labels
         images = flatten(images)
+        images = images.astype(np.float32) / 255.0
         
         self.images = images
         self.labels = labels
@@ -80,7 +81,38 @@ for i in range(EPOCHS):
     avg_acc = total_acc / len(val_loader)
     
     print(f"Epochs: {i+1}/{EPOCHS} | Train: {avg_t_cce:.6} | Val: {avg_v_cce:.6} | Acc: {avg_acc * 100:.4}%")
-        
-        
+      
+from PIL import Image
+import os  
+
+base = "./mytorch/examples/outputs/mnist_mlp/mnist_mlp"
+i = 1
+
+while os.path.exists(f"{base}_{i}"):
+    i += 1
+
+output_dir = f"{base}_{i}"
+os.makedirs(output_dir)
+
+idx = 0
+
+for imgs, labels in val_loader:
+    logits = model(imgs)
+
+    preds = np.argmax(logits.numpy(), axis=-1)
+
+    imgs = imgs.numpy()
+    labels = labels.numpy()
+
+    for image, pred, label in zip(imgs, preds, labels):
+        if pred != label:
+            img = (image.reshape(28, 28) * 255).astype(np.uint8)
+
+            filename = f"{idx}_true_{label}_pred_{pred}.png"
+            Image.fromarray(img).save(
+                os.path.join(output_dir, filename)
+            )
+
+            idx += 1
 
 
