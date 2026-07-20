@@ -176,6 +176,34 @@ class Tensor:
         from .ops.movement import Transpose
         return Transpose.apply(self, dim0, dim1)
     
+    def reshape(self, shape: int | tuple):
+        from .ops.movement import Reshape
+        return Reshape.apply(self, shape)
+    
+    def flatten(self, start_dim=0, end_dim=-1):
+        shape = self.shape
+        ndim = len(shape)
+        
+        if not (-ndim <= start_dim < ndim):
+            raise IndexError("start_dim out of range")
+        if not (-ndim <= end_dim < ndim):
+            raise IndexError("end_dim out of range")
+        
+        if start_dim < 0:
+            start_dim += ndim
+        if end_dim < 0:
+            end_dim += ndim
+            
+        if start_dim > end_dim:
+            raise ValueError("start_dim must be <= end_dim")
+        
+        flattened = 1
+        for s in shape[start_dim:end_dim+1]:
+            flattened *= s
+        
+        new_shape = shape[:start_dim] + (flattened,) + shape[end_dim+1:]
+        return self.reshape(new_shape)
+    
     @property
     def shape(self):
         return self.data.shape

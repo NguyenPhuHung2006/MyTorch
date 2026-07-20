@@ -123,3 +123,137 @@ def test_double_transpose_backward():
 
     np.testing.assert_allclose(x.grad, np.ones_like(x.data))
     
+
+def test_reshape_shape():
+    x = Tensor(np.arange(24).reshape(2, 3, 4))
+
+    y = x.reshape((6, 4))
+
+    assert y.shape == (6, 4)
+
+
+def test_reshape_values():
+    x = Tensor(np.arange(12))
+
+    y = x.reshape((3, 4))
+
+    np.testing.assert_array_equal(
+        y.data,
+        np.arange(12).reshape(3, 4)
+    )
+
+
+def test_reshape_backward():
+    x = Tensor(np.random.randn(2, 3), requires_grad=True)
+
+    y = x.reshape((3, 2))
+    loss = y.sum()
+
+    loss.backward()
+
+    np.testing.assert_array_equal(
+        x.grad,
+        np.ones((2, 3))
+    )
+    
+import numpy as np
+
+from mytorch import Tensor
+
+
+def test_flatten_default():
+    x = Tensor(np.zeros((2, 3, 4)))
+
+    y = x.flatten()
+
+    assert y.shape == (24,)
+
+
+def test_flatten_start_dim():
+    x = Tensor(np.zeros((2, 3, 4)))
+
+    y = x.flatten(start_dim=1)
+
+    assert y.shape == (2, 12)
+
+
+def test_flatten_middle_dims():
+    x = Tensor(np.zeros((3, 2, 4, 5)))
+
+    y = x.flatten(1, 2)
+
+    assert y.shape == (3, 8, 5)
+
+
+def test_flatten_negative_end_dim():
+    x = Tensor(np.zeros((3, 2, 4, 5)))
+
+    y = x.flatten(1, -1)
+
+    assert y.shape == (3, 40)
+
+
+def test_flatten_negative_start_dim():
+    x = Tensor(np.zeros((2, 3, 4)))
+
+    y = x.flatten(-2, -1)
+
+    assert y.shape == (2, 12)
+
+
+def test_flatten_values():
+    x = Tensor(np.arange(24).reshape(2, 3, 4))
+
+    y = x.flatten(1)
+
+    np.testing.assert_array_equal(
+        y.data,
+        np.arange(24).reshape(2, 12)
+    )
+
+
+def test_flatten_backward():
+    x = Tensor(np.random.randn(2, 3, 4), requires_grad=True)
+
+    y = x.flatten(1)
+
+    loss = y.sum()
+
+    loss.backward()
+
+    np.testing.assert_array_equal(
+        x.grad,
+        np.ones((2, 3, 4))
+    )
+    
+import pytest
+
+def test_flatten_invalid_start_dim():
+    x = Tensor(np.zeros((2, 3)))
+
+    with pytest.raises(IndexError):
+        x.flatten(3)
+
+
+def test_flatten_invalid_end_dim():
+    x = Tensor(np.zeros((2, 3)))
+
+    with pytest.raises(IndexError):
+        x.flatten(0, 3)
+
+
+def test_flatten_start_after_end():
+    x = Tensor(np.zeros((2, 3, 4)))
+
+    with pytest.raises(ValueError):
+        x.flatten(2, 1)
+        
+def test_reshape_preserves_order():
+    x = Tensor(np.arange(24).reshape(2, 3, 4))
+
+    y = x.reshape((4, 6))
+
+    np.testing.assert_array_equal(
+        y.data.ravel(),
+        x.data.ravel()
+    )

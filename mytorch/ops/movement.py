@@ -18,7 +18,6 @@ class Transpose(Function):
         return (grad_x,)
     
 class GetItem(Function):
-    
     @staticmethod
     def unwrap_index(index):
         if isinstance(index, Tensor):
@@ -44,4 +43,16 @@ class GetItem(Function):
         grad_x = np.zeros(x_shape, dtype=grad_output.dtype)
         np.add.at(grad_x, index, grad_output)
         
-        return (grad_x,) 
+        return (grad_x,)
+    
+class Reshape(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray, shape: int | tuple):
+        ctx.saved_data["original_shape"] = x.shape
+        return x.reshape(shape)
+    
+    @staticmethod
+    def backward(ctx, grad_output):
+        original_shape = ctx.saved_data["original_shape"]
+        grad_x = grad_output.reshape(original_shape)
+        return (grad_x,)
