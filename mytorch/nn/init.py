@@ -8,8 +8,16 @@ def _calculate_fan_in_and_fan_out(tensor: Tensor):
             "Fan in and fan out can only be computed for tensors with at least 2 dimensions."
         )
 
-    fan_out = tensor.shape[0]
-    fan_in = tensor.shape[1]
+    num_input_fmaps = tensor.shape[1]
+    num_output_fmaps = tensor.shape[0]
+
+    receptive_field_size = 1
+    if tensor.ndim > 2:
+        for s in tensor.shape[2:]:
+            receptive_field_size *= s
+
+    fan_in = num_input_fmaps * receptive_field_size
+    fan_out = num_output_fmaps * receptive_field_size
 
     return fan_in, fan_out
 
@@ -32,23 +40,23 @@ def calculate_gain(nonlinearity: str, param=None):
     raise ValueError(f"Unsupported nonlinearity: {nonlinearity}")
 
 def zeros_(tensor: Tensor):
-    tensor.data[:] = np.zeros_like(tensor.data)
+    tensor.data[...] = np.zeros_like(tensor.data)
     return tensor
 
 def ones_(tensor: Tensor):
-    tensor.data[:] = np.ones_like(tensor.data)
+    tensor.data[...] = np.ones_like(tensor.data)
     return tensor
 
 def constant_(tensor: Tensor, val):
-    tensor.data[:] = np.full_like(tensor.data, val)
+    tensor.data[...] = np.full_like(tensor.data, val)
     return tensor
 
 def uniform_(tensor: Tensor, a=0.0, b=1.0):
-    tensor.data[:] = np.random.uniform(a, b, tensor.shape)
+    tensor.data[...] = np.random.uniform(a, b, tensor.shape)
     return tensor
 
 def normal_(tensor: Tensor, mean=0.0, std=1.0):
-    tensor.data[:] = np.random.normal(mean, std, tensor.shape)
+    tensor.data[...] = np.random.normal(mean, std, tensor.shape)
     return tensor
 
 def xavier_uniform_(tensor: Tensor, gain=1.0):
@@ -99,3 +107,8 @@ def kaiming_normal_(
     std = gain / math.sqrt(fan)
 
     return normal_(tensor, 0.0, std)
+
+def uniform_bias_(bias: Tensor, weight: Tensor):
+    fan_in, _ = _calculate_fan_in_and_fan_out(weight)
+    bound = 1.0 / math.sqrt(fan_in)
+    return uniform_(bias, -bound, bound)

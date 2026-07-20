@@ -4,7 +4,12 @@ import numpy as np
 
 class Conv2d(Function):
     @staticmethod
-    def forward(ctx: Context, x, weight, bias, stride, padding):
+    def forward(ctx: Context, 
+                x: np.ndarray, 
+                weight: np.ndarray, 
+                bias: np.ndarray, 
+                stride: int | tuple, 
+                padding: int | tuple | str):
         ...
 
     @staticmethod

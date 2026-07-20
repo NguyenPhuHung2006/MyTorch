@@ -2,6 +2,7 @@ from .module import Module
 from ..parameter import Parameter
 import numpy as np
 from .. import init
+import math
 
 class Linear(Module):
     def __init__(self, in_features: int, out_features: int, bias: bool = True):
@@ -19,10 +20,10 @@ class Linear(Module):
         self.reset_parameters()
             
     def reset_parameters(self):
-        init.kaiming_uniform_(self.weight, nonlinearity="relu")
+        init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
         if self.bias is not None:
-            init.zeros_(self.bias)
+            init.uniform_bias_(self.bias, self.weight)
     
     def forward(self, x):
         out = x @ self.weight.T
