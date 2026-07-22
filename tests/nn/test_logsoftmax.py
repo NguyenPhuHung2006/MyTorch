@@ -1,7 +1,7 @@
 import numpy as np
 
 from mytorch.tensor import Tensor
-from mytorch.nn.modules.activations import LogSoftmax
+from mytorch.nn.modules.activation import LogSoftmax
 
 def test_logsoftmax_forward():
     x = Tensor(np.array([[1.0, 2.0, 3.0]]))

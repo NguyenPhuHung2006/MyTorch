@@ -1,7 +1,7 @@
 import numpy as np
 
 from mytorch.tensor import Tensor
-from mytorch.nn.modules.activations import ReLU
+from mytorch.nn.modules.activation import ReLU
 
 def test_forward_positive():
     relu = ReLU()

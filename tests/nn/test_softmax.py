@@ -1,7 +1,7 @@
 import numpy as np
 
 from mytorch.tensor import Tensor
-from mytorch.nn.modules.activations import Softmax
+from mytorch.nn.modules.activation import Softmax
 
 def test_softmax_forward():
     x = Tensor(np.array([[1.0, 2.0, 3.0]]))

@@ -2,7 +2,7 @@ from .module import Module
 from .sequential import Sequential
 from .linear import Linear
 
-from .activations import (
+from .activation import (
     ReLU,
     Sigmoid,
     Softmax,

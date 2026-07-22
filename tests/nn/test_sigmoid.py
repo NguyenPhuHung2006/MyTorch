@@ -1,7 +1,7 @@
 import numpy as np
 
 from mytorch.tensor import Tensor
-from mytorch.nn.modules.activations import Sigmoid
+from mytorch.nn.modules.activation import Sigmoid
 
 
 def test_sigmoid_forward():

@@ -120,23 +120,23 @@ class Tensor:
         return self.data.item()
     
     def sum(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
-        from .ops.reductions import Sum
+        from .ops.reduction import Sum
         return Sum.apply(self, axis, keepdims)
     
     def mean(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
-        from .ops.reductions import Mean
+        from .ops.reduction import Mean
         return Mean.apply(self, axis, keepdims)
     
     def max(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
-        from .ops.reductions import Max
+        from .ops.reduction import Max
         return Max.apply(self, axis, keepdims)
     
     def min(self, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
-        from .ops.reductions import Min
+        from .ops.reduction import Min
         return Min.apply(self, axis, keepdims)
     
     def any(self, dim: int | None = None, keepdims: bool = False):
-        from .ops.reductions import Any
+        from .ops.reduction import Any
         return Any.apply(self, dim, keepdims)
     
     def relu(self):

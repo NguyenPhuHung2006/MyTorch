@@ -1,7 +1,7 @@
 import numpy as np
-from mytorch.nn.modules.containers import ModuleList
+from mytorch.nn.modules.container import ModuleList
 from mytorch.nn.modules.linear import Linear
-from mytorch.nn.modules.activations import ReLU
+from mytorch.nn.modules.activation import ReLU
 
 def test_len():
     modules = ModuleList([

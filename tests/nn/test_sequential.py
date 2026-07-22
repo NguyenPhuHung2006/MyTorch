@@ -4,8 +4,8 @@ import pytest
 from mytorch.tensor import Tensor
 from mytorch.nn.modules.sequential import Sequential
 from mytorch.nn.modules.linear import Linear
-from mytorch.nn.modules.activations import ReLU
-from mytorch.nn.modules.activations import Sigmoid
+from mytorch.nn.modules.activation import ReLU
+from mytorch.nn.modules.activation import Sigmoid
 
 def test_forward_single_module():
     layer = Linear(3, 2)
