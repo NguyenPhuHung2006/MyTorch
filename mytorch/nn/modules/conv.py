@@ -2,7 +2,7 @@ from .module import Module
 from ..parameter import Parameter
 import numpy as np
 from .. import init
-from ...ops.conv import Conv2d as Conv2dFunction
+from ...ops.conv import ConvNd as ConvNdFunction
 import math
 
 def _pair(value):
@@ -19,6 +19,7 @@ class Conv2d(Module):
                  kernel_size: int | tuple[int, int],
                  stride: int | tuple[int, int] = 1,
                  padding: int | tuple[int, int] = 0,
+                 dilation: int | tuple[int, int] = 1,
                  bias: bool = True):
         super().__init__()
         
@@ -31,6 +32,7 @@ class Conv2d(Module):
         self.stride = _pair(stride)
         self.padding = _pair(padding)
         self.kernel_size = _pair(kernel_size)
+        self.dilation = _pair(dilation)
         kernel_h, kernel_w = self.kernel_size
         
         self.weight = Parameter(np.empty((
@@ -54,12 +56,13 @@ class Conv2d(Module):
             init.uniform_bias_(self.bias, self.weight)
             
     def forward(self, x):
-        return Conv2dFunction.apply(
+        return ConvNdFunction.apply(
             x,
             self.weight,
             self.bias,
             self.stride,
             self.padding,
+            self.dilation
         )
             
     
