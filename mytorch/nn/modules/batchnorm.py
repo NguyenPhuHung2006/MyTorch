@@ -80,7 +80,7 @@ class _BatchNorm(Module):
         
 class BatchNorm1d(_BatchNorm):
     def _check_input_dim(self, x):
-        if x.ndim != 2 or x.ndim != 3:
+        if x.ndim != 2 and x.ndim != 3:
             raise ValueError(
                 f"expected 2D or 3D input, got {x.ndim}D input"
             )

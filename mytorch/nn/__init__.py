@@ -12,6 +12,9 @@ from .modules import (
     BCELoss,
     BCEWithLogitsLoss,
     CrossEntropyLoss,
+    BatchNorm1d,
+    BatchNorm2d,
+    BatchNorm3d
 )
 
 __all__ = [

@@ -176,7 +176,9 @@ class Tensor:
         from .ops.movement import Transpose
         return Transpose.apply(self, dim0, dim1)
     
-    def reshape(self, shape: int | tuple):
+    def reshape(self, *shape):
+        if len(shape) == 1:
+            shape = shape[0]
         from .ops.movement import Reshape
         return Reshape.apply(self, shape)
     
