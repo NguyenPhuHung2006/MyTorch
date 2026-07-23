@@ -1,5 +1,6 @@
 from .module import Module
 from ..parameter import Parameter
+from ...tensor import Tensor
 import numpy as np
 from .. import init
 from ...ops.conv import ConvNd as ConvNdFunction
@@ -55,7 +56,7 @@ class Conv2d(Module):
         if self.bias is not None:
             init.uniform_bias_(self.bias, self.weight)
             
-    def forward(self, x):
+    def forward(self, x: Tensor):
         return ConvNdFunction.apply(
             x,
             self.weight,

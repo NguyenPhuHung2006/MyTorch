@@ -1,4 +1,5 @@
 from .module import Module
+from ...tensor import Tensor
 
 class Sequential(Module):
     def __init__(self, *layers):
@@ -7,6 +8,11 @@ class Sequential(Module):
             self.add_module(str(i), layer)
         
     def forward(self, x):
+        if not isinstance(x, Tensor):
+            raise TypeError(
+                f"expected Tensor, got {type(x).__name__}"
+            )
+        
         for layer in self._modules.values():
             x = layer(x)
         return x

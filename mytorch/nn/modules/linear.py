@@ -1,5 +1,6 @@
 from .module import Module
 from ..parameter import Parameter
+from ...tensor import Tensor
 import numpy as np
 from .. import init
 import math
@@ -25,7 +26,7 @@ class Linear(Module):
         if self.bias is not None:
             init.uniform_bias_(self.bias, self.weight)
     
-    def forward(self, x):
+    def forward(self, x: Tensor):
         out = x @ self.weight.T
         if self.bias is not None:
             out += self.bias

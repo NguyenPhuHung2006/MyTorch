@@ -9,6 +9,12 @@ from .activation import (
     LogSoftmax,
 )
 
+from .batchnorm import (
+    BatchNorm1d,
+    BatchNorm2d,
+    BatchNorm3d
+)
+
 from .loss import (
     MSELoss,
     BCELoss,

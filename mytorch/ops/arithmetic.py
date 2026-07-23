@@ -59,7 +59,7 @@ class Pow(Function):
         return out
     
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx: Context, grad_output: np.ndarray):
         x, y, out = ctx.saved_tensors
 
         grad_x = grad_y = None

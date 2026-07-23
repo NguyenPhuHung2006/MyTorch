@@ -52,7 +52,7 @@ class Reshape(Function):
         return x.reshape(shape)
     
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx: Context, grad_output: np.ndarray):
         original_shape = ctx.saved_data["original_shape"]
         grad_x = grad_output.reshape(original_shape)
         return (grad_x,)

@@ -135,5 +135,5 @@ class Any(Function):
     differentiable = False
 
     @staticmethod
-    def forward(ctx: Context, x, dim, keepdim):
+    def forward(ctx: Context, x: np.ndarray, dim, keepdim):
         return np.any(x, axis=dim, keepdims=keepdim)
