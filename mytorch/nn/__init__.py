@@ -14,7 +14,11 @@ from .modules import (
     CrossEntropyLoss,
     BatchNorm1d,
     BatchNorm2d,
-    BatchNorm3d
+    BatchNorm3d,
+    Dropout,
+    Dropout1d,
+    Dropout2d,
+    Dropout3d
 )
 
 __all__ = [

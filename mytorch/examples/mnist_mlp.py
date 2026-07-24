@@ -36,12 +36,16 @@ class MNISTSolver(nn.Module):
     def __init__(self):
         super().__init__()
         self.layers = nn.Sequential(
-            nn.Linear(train_dataset.images.shape[1], 256),
+            nn.Linear(train_dataset.images.shape[1], 256, bias=False),
             nn.BatchNorm1d(256),
             nn.ReLU(),
-            nn.Linear(256, 128),
+            nn.Dropout(0.2),
+            
+            nn.Linear(256, 128, bias=False),
             nn.BatchNorm1d(128),
             nn.ReLU(),
+            nn.Dropout(0.2),
+            
             nn.Linear(128, 10)
         )
         

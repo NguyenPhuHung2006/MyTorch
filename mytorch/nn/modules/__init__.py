@@ -15,6 +15,13 @@ from .batchnorm import (
     BatchNorm3d
 )
 
+from .dropout import (
+    Dropout,
+    Dropout1d,
+    Dropout2d,
+    Dropout3d
+)
+
 from .loss import (
     MSELoss,
     BCELoss,
