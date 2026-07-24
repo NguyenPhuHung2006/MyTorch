@@ -49,9 +49,8 @@ class _BatchNorm(Module):
             mean = self.running_mean
             var = self.running_var
         else:
-            x_np = x.numpy()
-            mean = x_np.mean(axis=reduce_dims)
-            var = ((x_np - self._broadcast(mean, x)) ** 2).mean(axis=reduce_dims)
+            mean = x.mean(axis=reduce_dims)
+            var = ((x - self._broadcast(mean, x)) ** 2).mean(axis=reduce_dims)
         
         broadcast_mean = self._broadcast(mean, x)
         broadcast_var = self._broadcast(var, x)
@@ -61,12 +60,12 @@ class _BatchNorm(Module):
             
             self.running_mean = (
                 (1 - self.momentum) * self.running_mean
-                + self.momentum * mean
+                + self.momentum * mean.numpy()
             )
 
             self.running_var = (
                 (1 - self.momentum) * self.running_var
-                + self.momentum * var
+                + self.momentum * var.numpy()
             )
         
         if not self.affine:

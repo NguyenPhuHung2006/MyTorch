@@ -37,8 +37,10 @@ class MNISTSolver(nn.Module):
         super().__init__()
         self.layers = nn.Sequential(
             nn.Linear(train_dataset.images.shape[1], 256),
+            nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Linear(256, 128),
+            nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Linear(128, 10)
         )
@@ -52,7 +54,10 @@ model = MNISTSolver()
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
 for i in range(EPOCHS):
+    
     t_cce = 0
+    model.train()
+    
     for imgs, labels in train_loader:
         logits = model(imgs)
         loss = criterion(logits, labels)
@@ -67,6 +72,7 @@ for i in range(EPOCHS):
     
     v_cce = 0
     total_acc = 0
+    model.eval()
     for imgs, labels in val_loader:
         logits = model(imgs)
         preds = np.argmax(logits.numpy(), axis=-1)
@@ -93,6 +99,8 @@ while os.path.exists(f"{base}_{i}"):
 
 output_dir = f"{base}_{i}"
 os.makedirs(output_dir)
+
+model.eval()
 
 idx = 0
 
