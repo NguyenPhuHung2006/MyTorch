@@ -220,3 +220,72 @@ def test_softmax_backward():
 
 def test_log_softmax_backward():
     gradcheck(lambda x: x.log_softmax())
+    
+import mytorch.nn as nn
+    
+def test_tanh_output_shape():
+    x = Tensor(np.random.randn(4, 5))
+    tanh = nn.Tanh()
+
+    y = tanh(x)
+
+    assert y.shape == (4, 5)
+    
+def test_tanh_values():
+    x_np = np.array([
+        [-2.0, -1.0, 0.0],
+        [0.5, 1.0, 2.0]
+    ])
+
+    x = Tensor(x_np)
+    tanh = nn.Tanh()
+
+    y = tanh(x)
+
+    np.testing.assert_allclose(
+        y.numpy(),
+        np.tanh(x_np),
+        rtol=1e-6,
+        atol=1e-6,
+    )
+
+def test_tanh_saturation():
+    x = Tensor(np.array([-1000., -100., 100., 1000.]))
+
+    y = nn.Tanh()(x).numpy()
+
+    np.testing.assert_allclose(
+        y,
+        np.array([-1., -1., 1., 1.]),
+        atol=1e-6,
+    )
+    
+def test_tanh_backward():
+    x_np = np.random.randn(5)
+
+    x = Tensor(x_np, requires_grad=True)
+
+    y = nn.Tanh()(x)
+    loss = y.sum()
+    loss.backward()
+
+    expected = 1 - np.tanh(x_np) ** 2
+
+    np.testing.assert_allclose(
+        x.grad,
+        expected,
+        rtol=1e-6,
+        atol=1e-6,
+    )
+    
+def test_tanh_zero():
+    x = Tensor(np.zeros(5))
+
+    y = nn.Tanh()(x)
+
+    np.testing.assert_allclose(
+        y.numpy(),
+        np.zeros(5),
+    )
+    
+

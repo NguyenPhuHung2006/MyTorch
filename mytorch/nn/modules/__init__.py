@@ -5,6 +5,7 @@ from .linear import Linear
 from .activation import (
     ReLU,
     Sigmoid,
+    Tanh,
     Softmax,
     LogSoftmax,
 )

@@ -27,6 +27,19 @@ class Sigmoid(Function):
         grad_x = grad_output * out * (1 - out)
         return (grad_x,)
     
+class Tanh(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray):
+        out = np.tanh(x)
+        ctx.save_for_backward(out)
+        return out
+    
+    @staticmethod
+    def backward(ctx: Context, grad_output: np.ndarray):
+        out, = ctx.saved_tensors
+        grad_x = grad_output * (1 - out**2)
+        return (grad_x,)
+    
 class Softmax(Function):
     @staticmethod
     def forward(ctx: Context, x: np.ndarray, dim):

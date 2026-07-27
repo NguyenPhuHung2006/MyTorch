@@ -147,6 +147,10 @@ class Tensor:
         from .ops.activation import Sigmoid
         return Sigmoid.apply(self)
     
+    def tanh(self):
+        from .ops.activation import Tanh
+        return Tanh.apply(self)
+    
     def softmax(self, dim: int | None = -1):
         from .ops.activation import Softmax
         return Softmax.apply(self, dim)

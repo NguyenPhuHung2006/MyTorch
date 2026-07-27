@@ -9,6 +9,10 @@ class Sigmoid(Module):
     def forward(self, x: Tensor):
         return x.sigmoid()
     
+class Tanh(Module):
+    def forward(self, x: Tensor):
+        return x.tanh()
+    
 class Softmax(Module):
     def __init__(self, dim: int | None = -1):
         super().__init__()

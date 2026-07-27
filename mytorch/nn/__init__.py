@@ -6,6 +6,7 @@ from .modules import (
     Linear,
     ReLU,
     Sigmoid,
+    Tanh,
     Softmax,
     LogSoftmax,
     MSELoss,
