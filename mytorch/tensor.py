@@ -109,6 +109,12 @@ class Tensor:
         from .ops.movement import GetItem
         return GetItem.apply(self, index)
     
+    def __setitem__(self, key, value):
+        if isinstance(value, Tensor):
+            self.data[key] = value.data
+        else:
+            self.data[key] = value
+    
     def numel(self):
         return np.size(self.data)
 
