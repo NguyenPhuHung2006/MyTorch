@@ -2,6 +2,7 @@ from .module import Module
 from ...tensor import Tensor
 from ..parameter import Parameter
 from .container import ModuleList
+import mytorch as torch
 from .. import init
 import numpy as np
 
@@ -34,7 +35,7 @@ class RNNCell(Module):
         if self.bias is not None:
             init.uniform_(self.bias, -bound, bound)
         
-    def forward(self, x: Tensor, h: Tensor = None):
+    def forward(self, x: Tensor, h: Tensor | None = None):
         if x.ndim != 2:
             raise ValueError(
                 f"RNNCell expected x to be 2D (batch, input_size), "
@@ -139,6 +140,9 @@ class RNN(Module):
                 
             output.append(h[-1])
             
+        output = torch.stack(output)
+        if self.batch_first:
+            output = output.transpose(0, 1)
         return output, h
         
             

@@ -2,6 +2,11 @@ from .module import Module
 from .sequential import Sequential
 from .linear import Linear
 
+from .rnn import (
+    RNNCell,
+    RNN
+)
+
 from .activation import (
     ReLU,
     Sigmoid,
@@ -33,13 +38,31 @@ from .loss import (
 __all__ = [
     "Module",
     "Sequential",
+    
     "Linear",
+    
+    "RNNCell",
+    "RNN",
+    
     "ReLU",
     "Sigmoid",
+    "Tanh",
     "Softmax",
     "LogSoftmax",
+    
+    
+    
     "MSELoss",
     "BCELoss",
     "BCEWithLogitsLoss",
     "CrossEntropyLoss",
+    
+    "Dropout",
+    "Dropout1d",
+    "Dropout2d",
+    "Dropout3d",
+    
+    "BatchNorm1d",
+    "BatchNorm2d",
+    "BatchNorm3d"
 ]
