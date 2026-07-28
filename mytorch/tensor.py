@@ -192,6 +192,10 @@ class Tensor:
         from .ops.movement import Reshape
         return Reshape.apply(self, shape)
     
+    def clone(self):
+        from .ops.movement import Clone
+        return Clone.apply(self)
+    
     def flatten(self, start_dim=0, end_dim=-1):
         shape = self.shape
         ndim = len(shape)

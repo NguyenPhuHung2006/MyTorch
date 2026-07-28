@@ -8,7 +8,7 @@ class Function:
     differentiable = True
     
     @classmethod
-    def apply(cls, *args):
+    def apply(cls, *args, **kwargs):
         ctx = Context()
         
         ctx.needs_input_grad = tuple(
@@ -21,7 +21,7 @@ class Function:
             for arg in args
         ]
 
-        out_data = cls.forward(ctx, *raw_args)
+        out_data = cls.forward(ctx, *raw_args, **kwargs)
 
         requires_grad = (
             cls.differentiable 

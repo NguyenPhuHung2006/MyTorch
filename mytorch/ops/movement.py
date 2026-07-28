@@ -56,3 +56,61 @@ class Reshape(Function):
         original_shape = ctx.saved_data["original_shape"]
         grad_x = grad_output.reshape(original_shape)
         return (grad_x,)
+    
+class Clone(Function):
+    @staticmethod
+    def forward(ctx: Context, x: np.ndarray):
+        return x.copy()
+    
+    @staticmethod
+    def backward(ctx: Context, grad_output: np.ndarray):
+        return (grad_output,)
+        
+class Cat(Function):
+    @staticmethod
+    def forward(ctx: Context, *tensors, axis):
+        ctx.saved_data["axis"] = axis
+        ctx.saved_data["sizes"] = [t.shape[axis] for t in tensors]
+        return np.concatenate(tensors, axis=axis)
+    
+    @staticmethod
+    def backward(ctx: Context, grad_output: np.ndarray):
+        axis = ctx.saved_data["axis"]
+        sizes = ctx.saved_data["sizes"]
+        splits = np.cumsum(sizes[:-1])
+        grads = np.split(
+            grad_output,
+            splits,
+            axis=axis,
+        )
+        return tuple(grads)
+    
+class Stack(Function):
+    @staticmethod
+    def forward(ctx: Context, *tensors, axis):
+        ctx.saved_data["axis"] = axis
+        ctx.saved_data["num_tensors"] = len(tensors)
+        return np.stack(tensors, axis=axis)
+    
+    @staticmethod
+    def backward(ctx: Context, grad_output: np.ndarray):
+        axis = ctx.saved_data["axis"]
+        num_tensors = ctx.saved_data["num_tensors"]
+        split_grads = np.split(
+            grad_output,
+            num_tensors,
+            axis=axis,
+        )
+        
+        grads = []
+        for need, grad in zip(ctx.needs_input_grad, split_grads):
+            grad = np.squeeze(grad, axis=axis)
+            grads.append(grad if need else None)
+
+        return tuple(grads)
+        
+def cat(tensors, axis=0):
+    return Cat.apply(*tensors, axis=axis)
+
+def stack(tensors, axis=0):
+    return Stack.apply(*tensors, axis=axis)

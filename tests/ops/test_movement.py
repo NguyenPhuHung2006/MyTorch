@@ -257,3 +257,150 @@ def test_reshape_preserves_order():
         y.data.ravel(),
         x.data.ravel()
     )
+
+from mytorch import Tensor, cat, stack
+
+# ==========================
+# Cat
+# ==========================
+
+def test_cat_forward_axis0():
+    a = Tensor(np.random.randn(2, 3))
+    b = Tensor(np.random.randn(4, 3))
+
+    y = cat([a, b], axis=0)
+
+    expected = np.concatenate([a.data, b.data], axis=0)
+
+    assert y.shape == expected.shape
+    np.testing.assert_allclose(y.numpy(), expected)
+
+
+def test_cat_forward_axis1():
+    a = Tensor(np.random.randn(2, 3))
+    b = Tensor(np.random.randn(2, 5))
+
+    y = cat([a, b], axis=1)
+
+    expected = np.concatenate([a.data, b.data], axis=1)
+
+    assert y.shape == expected.shape
+    np.testing.assert_allclose(y.numpy(), expected)
+
+
+def test_cat_backward_two_inputs():
+    a = Tensor(np.random.randn(2, 3), requires_grad=True)
+    b = Tensor(np.random.randn(4, 3), requires_grad=True)
+
+    y = cat([a, b], axis=0)
+    loss = y.sum()
+    loss.backward()
+
+    np.testing.assert_allclose(a.grad, np.ones_like(a.data))
+    np.testing.assert_allclose(b.grad, np.ones_like(b.data))
+
+
+def test_cat_backward_three_inputs():
+    a = Tensor(np.random.randn(2, 3), requires_grad=True)
+    b = Tensor(np.random.randn(1, 3), requires_grad=True)
+    c = Tensor(np.random.randn(4, 3), requires_grad=True)
+
+    y = cat([a, b, c], axis=0)
+    loss = y.sum()
+    loss.backward()
+
+    np.testing.assert_allclose(a.grad, np.ones_like(a.data))
+    np.testing.assert_allclose(b.grad, np.ones_like(b.data))
+    np.testing.assert_allclose(c.grad, np.ones_like(c.data))
+
+
+def test_cat_requires_grad():
+    a = Tensor(np.random.randn(2, 3))
+    b = Tensor(np.random.randn(2, 3), requires_grad=True)
+
+    y = cat([a, b], axis=0)
+
+    assert y.requires_grad
+
+
+# ==========================
+# Stack
+# ==========================
+
+def test_stack_forward_axis0():
+    a = Tensor(np.random.randn(2, 3))
+    b = Tensor(np.random.randn(2, 3))
+
+    y = stack([a, b], axis=0)
+
+    expected = np.stack([a.data, b.data], axis=0)
+
+    assert y.shape == expected.shape
+    np.testing.assert_allclose(y.numpy(), expected)
+
+
+def test_stack_forward_axis1():
+    a = Tensor(np.random.randn(2, 3))
+    b = Tensor(np.random.randn(2, 3))
+
+    y = stack([a, b], axis=1)
+
+    expected = np.stack([a.data, b.data], axis=1)
+
+    assert y.shape == expected.shape
+    np.testing.assert_allclose(y.numpy(), expected)
+
+
+def test_stack_backward_two_inputs():
+    a = Tensor(np.random.randn(2, 3), requires_grad=True)
+    b = Tensor(np.random.randn(2, 3), requires_grad=True)
+
+    y = stack([a, b], axis=0)
+    loss = y.sum()
+    loss.backward()
+
+    np.testing.assert_allclose(a.grad, np.ones_like(a.data))
+    np.testing.assert_allclose(b.grad, np.ones_like(b.data))
+
+
+def test_stack_backward_three_inputs():
+    a = Tensor(np.random.randn(2, 3), requires_grad=True)
+    b = Tensor(np.random.randn(2, 3), requires_grad=True)
+    c = Tensor(np.random.randn(2, 3), requires_grad=True)
+
+    y = stack([a, b, c], axis=1)
+    loss = y.sum()
+    loss.backward()
+
+    np.testing.assert_allclose(a.grad, np.ones_like(a.data))
+    np.testing.assert_allclose(b.grad, np.ones_like(b.data))
+    np.testing.assert_allclose(c.grad, np.ones_like(c.data))
+
+
+def test_stack_requires_grad():
+    a = Tensor(np.random.randn(2, 3))
+    b = Tensor(np.random.randn(2, 3), requires_grad=True)
+
+    y = stack([a, b], axis=0)
+
+    assert y.requires_grad
+
+
+# ==========================
+# Errors
+# ==========================
+
+def test_cat_shape_mismatch():
+    a = Tensor(np.random.randn(2, 3))
+    b = Tensor(np.random.randn(4, 4))
+
+    with np.testing.assert_raises(ValueError):
+        cat([a, b], axis=0)
+
+
+def test_stack_shape_mismatch():
+    a = Tensor(np.random.randn(2, 3))
+    b = Tensor(np.random.randn(3, 3))
+
+    with np.testing.assert_raises(ValueError):
+        stack([a, b], axis=0)
