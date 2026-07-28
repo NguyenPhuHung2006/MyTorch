@@ -3,8 +3,15 @@ from ...tensor import Tensor
 from ..parameter import Parameter
 from .container import ModuleList
 import mytorch as torch
+from .activation import Tanh, ReLU
+from .dropout import Dropout
 from .. import init
 import numpy as np
+
+_ACTIVATIONS = {
+    "tanh": Tanh,
+    "relu": ReLU,
+}
 
 class RNNCell(Module):
     def __init__(self, input_size: int, hidden_size: int, bias=True, nonlinearity='tanh'):
@@ -17,6 +24,8 @@ class RNNCell(Module):
         
         self.input_size = input_size
         self.hidden_size = hidden_size
+        
+        self.activation = _ACTIVATIONS[nonlinearity]()
         
         self.weight_ih = Parameter(np.empty((hidden_size, input_size)))
         self.weight_hh = Parameter(np.empty((hidden_size, hidden_size)))
@@ -71,7 +80,7 @@ class RNNCell(Module):
         if self.bias is not None:
             out += self.bias
             
-        return out.tanh()
+        return self.activation(out)
             
 class RNN(Module):
     def __init__(self, 
@@ -86,15 +95,22 @@ class RNN(Module):
                 ):
         super().__init__()
         
-        self.cells = ModuleList()
+        self.forward_cells = ModuleList()
+        self.backward_cells = ModuleList()
         self.batch_first = batch_first
         self.num_layers = num_layers
         self.input_size = input_size
         self.hidden_size = hidden_size
+        
+        self.dropout_layer = Dropout(dropout)
+        self.dropout = dropout
+        
+        self.num_directions = 2 if bidirectional else 1
 
         for i in range(num_layers):
             in_features = input_size if i == 0 else hidden_size
-            self.cells.append(RNNCell(in_features, hidden_size, bias, nonlinearity))
+            self.forward_cells.append(RNNCell(in_features, hidden_size, bias, nonlinearity))
+            self.backward_cells.append(RNNCell(in_features, hidden_size, bias, nonlinearity))
             
     def forward(self, x: Tensor, h: Tensor | None = None):
         if x.ndim != 3:
@@ -114,7 +130,7 @@ class RNN(Module):
             )
             
         if h is None:
-            h = Tensor(np.zeros((self.num_layers, x.shape[1], self.hidden_size)))
+            h = Tensor(np.zeros((self.num_layers * self.num_directions, x.shape[1], self.hidden_size)))
         
         if h.ndim != 3:
             raise ValueError(
@@ -131,28 +147,34 @@ class RNN(Module):
                 f"but got {h.shape}."
             )
             
-        output = []
+        output_forward = []
         h_prev = h.clone()
         for t in range(seq_len):
+            
             layer_states = []
             
             for layer in range(self.num_layers):
+                
                 input_t = x[t] if layer == 0 else layer_states[-1]
-                h_t = self.cells[layer](input_t, h_prev[layer])
+                h_t = self.forward_cells[layer](input_t, h_prev[layer])
+                
+                if self.training and self.dropout > 0 and layer != self.num_layers - 1:
+                    h_t = self.dropout_layer(h_t)
+                    
                 layer_states.append(h_t)
                 
             h_prev = torch.stack(layer_states)
-            output.append(h_prev[-1])
+            output_forward.append(h_prev[-1])
             
-        if output:
-            output = torch.stack(output)
+        if output_forward:
+            output_forward = torch.stack(output_forward)
         else:
-            output = Tensor(
+            output_forward = Tensor(
                 np.empty((0, batch_size, self.hidden_size))
             )
         if self.batch_first:
-            output = output.transpose(0, 1)
-        return output, h_prev
+            output_forward = output_forward.transpose(0, 1)
+        return output_forward, h_prev
         
             
         
