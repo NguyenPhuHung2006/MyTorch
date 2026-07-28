@@ -19,7 +19,7 @@ class Engine:
                 if not isinstance(parent, Tensor) or not parent.requires_grad:
                     continue
                 if parent.grad is None:
-                    parent.grad = grad
+                    parent.grad = grad.copy()
                 else:
                     parent.grad += grad
     

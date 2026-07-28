@@ -86,7 +86,7 @@ class RNN(Module):
                 ):
         super().__init__()
         
-        self.layers = ModuleList()
+        self.cells = ModuleList()
         self.batch_first = batch_first
         self.num_layers = num_layers
         self.input_size = input_size
@@ -94,7 +94,7 @@ class RNN(Module):
 
         for i in range(num_layers):
             in_features = input_size if i == 0 else hidden_size
-            self.layers.append(RNNCell(in_features, hidden_size, bias, nonlinearity))
+            self.cells.append(RNNCell(in_features, hidden_size, bias, nonlinearity))
             
     def forward(self, x: Tensor, h: Tensor | None = None):
         if x.ndim != 3:
@@ -132,18 +132,27 @@ class RNN(Module):
             )
             
         output = []
+        h_prev = h.clone()
         for t in range(seq_len):
+            layer_states = []
             
-            for idx_layer in range(self.num_layers):
-                input_t = x[t] if idx_layer == 0 else h[idx_layer - 1]
-                h[idx_layer] = self.layers[idx_layer](input_t, h[idx_layer])
+            for layer in range(self.num_layers):
+                input_t = x[t] if layer == 0 else layer_states[-1]
+                h_t = self.cells[layer](input_t, h_prev[layer])
+                layer_states.append(h_t)
                 
-            output.append(h[-1])
+            h_prev = torch.stack(layer_states)
+            output.append(h_prev[-1])
             
-        output = torch.stack(output)
+        if output:
+            output = torch.stack(output)
+        else:
+            output = Tensor(
+                np.empty((0, batch_size, self.hidden_size))
+            )
         if self.batch_first:
             output = output.transpose(0, 1)
-        return output, h
+        return output, h_prev
         
             
         

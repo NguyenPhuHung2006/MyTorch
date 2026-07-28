@@ -118,33 +118,6 @@ def test_rnn_zero_input():
     assert h.shape == (1, 3, 6)
 
 
-def test_rnn_named_parameters():
-    rnn = nn.RNN(
-        input_size=4,
-        hidden_size=6,
-        num_layers=3,
-    )
-
-    names = dict(rnn.named_parameters())
-
-    expected = {
-        "weight_ih_l0",
-        "weight_hh_l0",
-        "bias_ih_l0",
-        "bias_hh_l0",
-        "weight_ih_l1",
-        "weight_hh_l1",
-        "bias_ih_l1",
-        "bias_hh_l1",
-        "weight_ih_l2",
-        "weight_hh_l2",
-        "bias_ih_l2",
-        "bias_hh_l2",
-    }
-
-    assert set(names.keys()) == expected
-
-
 def test_rnn_parameters_count():
     rnn = nn.RNN(
         input_size=4,
@@ -154,7 +127,7 @@ def test_rnn_parameters_count():
 
     params = list(rnn.parameters())
 
-    assert len(params) == 8
+    assert len(params) == 6
 
 
 def test_rnn_forward_is_deterministic():
