@@ -95,22 +95,38 @@ class RNN(Module):
                 ):
         super().__init__()
         
-        self.forward_cells = ModuleList()
-        self.backward_cells = ModuleList()
+        self.cells = ModuleList()
         self.batch_first = batch_first
         self.num_layers = num_layers
         self.input_size = input_size
         self.hidden_size = hidden_size
-        
         self.dropout_layer = Dropout(dropout)
         self.dropout = dropout
-        
+        self.bidirectional = bidirectional
         self.num_directions = 2 if bidirectional else 1
 
-        for i in range(num_layers):
-            in_features = input_size if i == 0 else hidden_size
-            self.forward_cells.append(RNNCell(in_features, hidden_size, bias, nonlinearity))
-            self.backward_cells.append(RNNCell(in_features, hidden_size, bias, nonlinearity))
+        for layer in range(num_layers):
+            in_features = input_size if layer == 0 else hidden_size * self.num_directions
+            
+            forward_cell = RNNCell(
+                in_features,
+                hidden_size,
+                bias=bias,
+                nonlinearity=nonlinearity
+            )
+            
+            cells = [forward_cell]
+            
+            if bidirectional:
+                backward_cell = RNNCell(
+                    in_features,
+                    hidden_size,
+                    bias=bias,
+                    nonlinearity=nonlinearity
+                )
+                cells.append(backward_cell)
+            
+            self.cells.append(ModuleList(cells))
             
     def forward(self, x: Tensor, h: Tensor | None = None):
         if x.ndim != 3:
@@ -139,7 +155,7 @@ class RNN(Module):
                 f"but got {h.shape}."
             )
 
-        expected = (self.num_layers, batch_size, self.hidden_size)
+        expected = (self.num_layers * self.num_directions, batch_size, self.hidden_size)
 
         if h.shape != expected:
             raise ValueError(
@@ -147,34 +163,85 @@ class RNN(Module):
                 f"but got {h.shape}."
             )
             
-        output_forward = []
-        h_prev = h.clone()
-        for t in range(seq_len):
-            
-            layer_states = []
-            
-            for layer in range(self.num_layers):
-                
-                input_t = x[t] if layer == 0 else layer_states[-1]
-                h_t = self.forward_cells[layer](input_t, h_prev[layer])
-                
-                if self.training and self.dropout > 0 and layer != self.num_layers - 1:
-                    h_t = self.dropout_layer(h_t)
-                    
-                layer_states.append(h_t)
-                
-            h_prev = torch.stack(layer_states)
-            output_forward.append(h_prev[-1])
-            
-        if output_forward:
-            output_forward = torch.stack(output_forward)
-        else:
-            output_forward = Tensor(
-                np.empty((0, batch_size, self.hidden_size))
+        outputs = None
+        hiddens = []
+        
+        if seq_len == 0:
+            outputs = Tensor(
+                np.empty((0, batch_size, self.hidden_size * self.num_directions))
             )
+            if self.batch_first:
+                outputs = outputs.transpose(0, 1)
+            return outputs, h
+        
+        inputs = x
+        if self.bidirectional:
+            for layer in range(self.num_layers):
+                h_t_forward = h[2 * layer]
+                h_t_backward = h[2 * layer + 1]
+                
+                forward_outputs = [None] * seq_len
+                backward_outputs = [None] * seq_len
+        
+                # Forward
+                for t in range(seq_len):
+                    h_t_forward = self.cells[layer][0](
+                        inputs[t],
+                        h_t_forward
+                    )
+                    forward_outputs[t] = h_t_forward
+                    
+                # Backward
+                for t in reversed(range(seq_len)):
+                    h_t_backward = self.cells[layer][1](
+                        inputs[t],
+                        h_t_backward
+                    )
+                    backward_outputs[t] = h_t_backward
+                    
+                next_inputs = []
+                for t in range(seq_len):
+                    h_t = torch.cat(
+                        [forward_outputs[t], backward_outputs[t]],
+                        axis=-1
+                    )
+                    next_inputs.append(h_t)
+
+                inputs = torch.stack(next_inputs)
+                if layer < self.num_layers - 1 and self.dropout > 0:
+                    inputs = self.dropout_layer(inputs)
+
+                if layer == self.num_layers - 1:
+                    outputs = inputs
+
+                hiddens.extend([
+                    h_t_forward,
+                    h_t_backward
+                ])
+                
+        else:
+            for layer in range(self.num_layers):
+                h_t = h[layer]
+                forward_outputs = [None] * seq_len
+                
+                for t in range(seq_len):
+                    h_t = self.cells[layer][0](
+                        inputs[t],
+                        h_t
+                    )
+                    forward_outputs[t] = h_t
+                    
+                inputs = torch.stack(forward_outputs)
+                if layer < self.num_layers - 1 and self.dropout > 0:
+                    inputs = self.dropout_layer(inputs)
+                
+                if layer == self.num_layers - 1:
+                    outputs = inputs
+                
+                hiddens.append(h_t)
+                
+        hiddens = torch.stack(hiddens)
         if self.batch_first:
-            output_forward = output_forward.transpose(0, 1)
-        return output_forward, h_prev
+            outputs = outputs.transpose(0, 1)
         
-            
-        
+        return outputs, hiddens
