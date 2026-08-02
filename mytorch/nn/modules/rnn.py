@@ -100,6 +100,8 @@ class RNN(Module):
         self.num_layers = num_layers
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.nonlinearity = nonlinearity
+        self.bias = bias
         self.dropout_layer = Dropout(dropout)
         self.dropout = dropout
         self.bidirectional = bidirectional
@@ -128,120 +130,127 @@ class RNN(Module):
             
             self.cells.append(ModuleList(cells))
             
-    def forward(self, x: Tensor, h: Tensor | None = None):
+    def _validate_input(self, x: Tensor):
         if x.ndim != 3:
             raise ValueError(
                 f"RNN expected 3D input, but got shape {x.shape}."
             )
-            
+
         if self.batch_first:
             x = x.transpose(0, 1)
-            
+
         seq_len, batch_size, input_size = x.shape
-        
+
         if input_size != self.input_size:
             raise ValueError(
                 f"RNN expected input_size={self.input_size}, "
                 f"but got {input_size}."
             )
-            
+
+        return x, seq_len, batch_size
+    
+    def _prepare_hidden(self, h, batch_size):
+        expected = (
+            self.num_layers * self.num_directions,
+            batch_size,
+            self.hidden_size,
+        )
+
         if h is None:
-            h = Tensor(np.zeros((self.num_layers * self.num_directions, x.shape[1], self.hidden_size)))
-        
+            return Tensor(np.zeros(expected))
+
         if h.ndim != 3:
             raise ValueError(
-                f"RNN expected h to have shape "
-                f"(num_layers, batch, hidden_size), "
-                f"but got {h.shape}."
+                f"RNN expected h to have 3 dimensions, "
+                f"but got shape {h.shape}."
             )
-
-        expected = (self.num_layers * self.num_directions, batch_size, self.hidden_size)
 
         if h.shape != expected:
             raise ValueError(
                 f"RNN expected hidden state shape {expected}, "
                 f"but got {h.shape}."
             )
+
+        return h
+    
+    def _run_direction(self, inputs, cell, h, reverse=False):
+        seq_len = inputs.shape[0]
+
+        outputs = [None] * seq_len
+
+        time_steps = range(seq_len)
+        if reverse:
+            time_steps = reversed(range(seq_len))
+
+        for t in time_steps:
+            h = cell(inputs[t], h)
+            outputs[t] = h
+
+        return outputs, h
+    
+    def _run_layer(self, inputs, h, layer):
+        if self.bidirectional:
+            return self._run_bidirectional_layer(inputs, h, layer)
+
+        outputs, h_last = self._run_direction(
+            inputs,
+            self.cells[layer][0],
+            h[layer],
+        )
+
+        return torch.stack(outputs), [h_last]
+    
+    def _run_bidirectional_layer(self, inputs, h, layer):
+        h_forward = h[2 * layer]
+        h_backward = h[2 * layer + 1]
+
+        forward_outputs, h_forward = self._run_direction(
+            inputs,
+            self.cells[layer][0],
+            h_forward,
+        )
+
+        backward_outputs, h_backward = self._run_direction(
+            inputs,
+            self.cells[layer][1],
+            h_backward,
+            reverse=True,
+        )
+
+        outputs = [
+            torch.cat([f, b], axis=-1)
+            for f, b in zip(forward_outputs, backward_outputs)
+        ]
+
+        return torch.stack(outputs), [h_forward, h_backward]
+    
+    def _empty_output(self, batch_size):
+        outputs = Tensor(
+            np.empty((0, batch_size, self.hidden_size * self.num_directions))
+        )
+        if self.batch_first:
+            outputs = outputs.transpose(0, 1)
+        return outputs
             
-        outputs = None
-        hiddens = []
-        
+    def forward(self, x: Tensor, h: Tensor | None = None):
+        x, seq_len, batch_size = self._validate_input(x)
+        h = self._prepare_hidden(h, batch_size)
+                
         if seq_len == 0:
-            outputs = Tensor(
-                np.empty((0, batch_size, self.hidden_size * self.num_directions))
-            )
-            if self.batch_first:
-                outputs = outputs.transpose(0, 1)
-            return outputs, h
+            return self._empty_output(batch_size), h
         
         inputs = x
-        if self.bidirectional:
-            for layer in range(self.num_layers):
-                h_t_forward = h[2 * layer]
-                h_t_backward = h[2 * layer + 1]
-                
-                forward_outputs = [None] * seq_len
-                backward_outputs = [None] * seq_len
-        
-                # Forward
-                for t in range(seq_len):
-                    h_t_forward = self.cells[layer][0](
-                        inputs[t],
-                        h_t_forward
-                    )
-                    forward_outputs[t] = h_t_forward
-                    
-                # Backward
-                for t in reversed(range(seq_len)):
-                    h_t_backward = self.cells[layer][1](
-                        inputs[t],
-                        h_t_backward
-                    )
-                    backward_outputs[t] = h_t_backward
-                    
-                next_inputs = []
-                for t in range(seq_len):
-                    h_t = torch.cat(
-                        [forward_outputs[t], backward_outputs[t]],
-                        axis=-1
-                    )
-                    next_inputs.append(h_t)
-
-                inputs = torch.stack(next_inputs)
-                if layer < self.num_layers - 1 and self.dropout > 0:
-                    inputs = self.dropout_layer(inputs)
-
-                if layer == self.num_layers - 1:
-                    outputs = inputs
-
-                hiddens.extend([
-                    h_t_forward,
-                    h_t_backward
-                ])
-                
-        else:
-            for layer in range(self.num_layers):
-                h_t = h[layer]
-                forward_outputs = [None] * seq_len
-                
-                for t in range(seq_len):
-                    h_t = self.cells[layer][0](
-                        inputs[t],
-                        h_t
-                    )
-                    forward_outputs[t] = h_t
-                    
-                inputs = torch.stack(forward_outputs)
-                if layer < self.num_layers - 1 and self.dropout > 0:
-                    inputs = self.dropout_layer(inputs)
-                
-                if layer == self.num_layers - 1:
-                    outputs = inputs
-                
-                hiddens.append(h_t)
-                
+        hiddens = []
+        for layer in range(self.num_layers):
+            inputs, layer_hiddens = self._run_layer(inputs, h, layer)
+            hiddens.extend(layer_hiddens)
+            
+            if layer < self.num_layers - 1 and self.dropout > 0:
+                inputs = self.dropout_layer(inputs)
+            
         hiddens = torch.stack(hiddens)
+        outputs = inputs
         if self.batch_first:
             outputs = outputs.transpose(0, 1)
         
-        return outputs, hiddens
+        return outputs, hiddens        
