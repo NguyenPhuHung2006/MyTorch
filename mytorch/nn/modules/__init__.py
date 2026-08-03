@@ -7,6 +7,11 @@ from .rnn import (
     RNN
 )
 
+from .lstm import (
+    LSTMCell,
+    LSTM
+)
+
 from .activation import (
     ReLU,
     Sigmoid,
@@ -43,6 +48,9 @@ __all__ = [
     
     "RNNCell",
     "RNN",
+    
+    "LSTMCell",
+    "LSTM",
     
     "ReLU",
     "Sigmoid",
