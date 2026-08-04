@@ -31,6 +31,7 @@ val_loader = DataLoader(test_dataset)
 NUM_LAYERS = 1
 HIDDEN_SIZE = 16
 DROPOUT = 0
+BIDIRECTIONAL = True
 
 class MNISTSolver_RNN(nn.Module):
     def __init__(self):
@@ -42,21 +43,27 @@ class MNISTSolver_RNN(nn.Module):
             num_layers=NUM_LAYERS,
             batch_first=True,
             dropout=DROPOUT,
+            bidirectional=BIDIRECTIONAL,
         )
         
         self.proj = nn.Linear(
             out_features=10,
-            in_features=HIDDEN_SIZE
+            in_features=HIDDEN_SIZE * (4 if BIDIRECTIONAL else 1)
         )
         
     def forward(self, x):
         if isinstance(self.rnn, nn.LSTM):
-            _, h_n, _ = self.rnn(x)
+            outputs, _, _ = self.rnn(x)
         else:
-            _, h_n = self.rnn(x)
+            outputs, _ = self.rnn(x)
             
-        h = h_n[-1]
-        
+        if BIDIRECTIONAL:
+            h_1 = outputs[:, 0, :]
+            h_n = outputs[:, -1, :]
+            h = torch.cat([h_1, h_n], axis=-1)
+        else:
+            h = outputs[:, -1, :]
+            
         out = self.proj(h)
         
         return out
