@@ -2,47 +2,13 @@ from .module import Module
 from .sequential import Sequential
 from .linear import Linear
 
-from .rnn import (
-    RNNCell,
-    RNN
-)
-
-from .lstm import (
-    LSTMCell,
-    LSTM
-)
-
-from .activation import (
-    ReLU,
-    Sigmoid,
-    Tanh,
-    Softmax,
-    LogSoftmax,
-)
-
-from .batchnorm import (
-    BatchNorm1d,
-    BatchNorm2d,
-    BatchNorm3d
-)
-
-from .layernorm import (
-    LayerNorm
-)
-
-from .dropout import (
-    Dropout,
-    Dropout1d,
-    Dropout2d,
-    Dropout3d
-)
-
-from .loss import (
-    MSELoss,
-    BCELoss,
-    BCEWithLogitsLoss,
-    CrossEntropyLoss,
-)
+from .rnn import *
+from .lstm import *
+from .activation import *
+from .batchnorm import *
+from .layernorm import *
+from .dropout import *
+from .loss import *
 
 __all__ = [
     "Module",
@@ -61,8 +27,6 @@ __all__ = [
     "Tanh",
     "Softmax",
     "LogSoftmax",
-    
-    
     
     "MSELoss",
     "BCELoss",
