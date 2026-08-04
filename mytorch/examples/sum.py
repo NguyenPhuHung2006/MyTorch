@@ -5,14 +5,16 @@ import numpy as np
 
 # python -m mytorch.examples.sum
 
-N = 16
+N = 100
 SEQ_LEN = 100
-NUM_LAYERS = 1
+NUM_LAYERS = 2
 HIDDEN_SIZE = 16
 DROPOUT = 0
+NUM_CLASSES = 10
 
 x = np.random.randint(0, 2, size=(N, SEQ_LEN, 1)).astype(np.float64)
-y = (x.sum(axis=1) % 2).astype(np.float64)
+y = (x.sum(axis=1) % NUM_CLASSES).astype(np.int32)
+y = np.squeeze(y, axis=-1)
 
 x = torch.Tensor(x)
 y = torch.Tensor(y)
@@ -28,7 +30,7 @@ class SumSolver(nn.Module):
             dropout=DROPOUT,
         )
         self.proj = nn.Linear(
-            out_features=1,
+            out_features=NUM_CLASSES,
             in_features=HIDDEN_SIZE
         )
     def forward(self, x):
@@ -43,7 +45,7 @@ class SumSolver(nn.Module):
         return out
         
 EPOCHS = 500
-criterion = nn.BCEWithLogitsLoss()
+criterion = nn.CrossEntropyLoss()
 
 model = SumSolver()
 optimizer = optim.Adam(model.parameters(), lr=1e-2)
@@ -56,8 +58,9 @@ for i in range(EPOCHS):
     loss.backward()
     optimizer.step()
     
-    pred = (logits.data > 0).astype(int)
-    accuracy = (pred == y.data).mean()
+    preds = np.argmax(logits.numpy(), axis=-1)
+    mask = (y == preds).numpy()
+    accuracy = mask.sum() / len(mask)
 
     print(
         f"epoch={i+1}, "
@@ -80,8 +83,10 @@ for i in range(EPOCHS):
 #         optimizer.step()
         
 #     logits = model(x)
-#     pred = (logits.data > 0).astype(int)
-#     accuracy = (pred == y.data).mean()
+    
+#     preds = np.argmax(logits.numpy(), axis=-1)
+#     mask = (y == preds).numpy()
+#     accuracy = mask.sum() / len(mask)
     
 #     print(
 #         f"run={run+1}, "
