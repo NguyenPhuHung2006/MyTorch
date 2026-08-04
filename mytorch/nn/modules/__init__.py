@@ -26,6 +26,10 @@ from .batchnorm import (
     BatchNorm3d
 )
 
+from .layernorm import (
+    LayerNorm
+)
+
 from .dropout import (
     Dropout,
     Dropout1d,
@@ -72,5 +76,7 @@ __all__ = [
     
     "BatchNorm1d",
     "BatchNorm2d",
-    "BatchNorm3d"
+    "BatchNorm3d",
+    
+    "LayerNorm"
 ]
