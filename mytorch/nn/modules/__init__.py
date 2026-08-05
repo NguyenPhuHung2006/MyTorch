@@ -9,6 +9,7 @@ from .batchnorm import *
 from .layernorm import *
 from .dropout import *
 from .loss import *
+from .attention import *
 
 __all__ = [
     "Module",
@@ -42,5 +43,8 @@ __all__ = [
     "BatchNorm2d",
     "BatchNorm3d",
     
-    "LayerNorm"
+    "LayerNorm",
+    
+    "ScaledDotProductAttention",
+    "SelfAttention",
 ]

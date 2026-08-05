@@ -6,8 +6,8 @@ class Module:
         object.__setattr__(self, "_parameters", {})
         object.__setattr__(self, "_modules", {})
 
-    def __call__(self, *args):
-        return self.forward(*args)
+    def __call__(self, *args, **kwargs):
+        return self.forward(*args, **kwargs)
 
     def __setattr__(self, name, value):
         if isinstance(value, Parameter):
