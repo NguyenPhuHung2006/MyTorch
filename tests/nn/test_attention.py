@@ -279,3 +279,558 @@ def test_self_attention_backward():
         assert parameter.grad is not None, (
             f"Missing gradient for {name}"
         )
+
+
+import numpy as np
+import pytest
+
+import mytorch as torch
+import mytorch.nn as nn
+
+
+# ============================================================
+# Helpers
+# ============================================================
+
+def make_input(batch_size=2, seq_len=4, embed_dim=8, seed=42):
+    rng = np.random.default_rng(seed)
+    return torch.Tensor(
+        rng.standard_normal((batch_size, seq_len, embed_dim))
+    )
+
+
+# ============================================================
+# _split_heads / _combine_heads
+# ============================================================
+
+def test_split_heads_shape():
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        dropout=0.0,
+    )
+
+    x = make_input(
+        batch_size=2,
+        seq_len=5,
+        embed_dim=8,
+    )
+
+    y = mha._split_heads(x)
+
+    # (B, L, D) -> (B, H, L, Dh)
+    assert y.shape == (2, 2, 5, 4)
+
+
+def test_combine_heads_shape():
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        dropout=0.0,
+    )
+
+    x = make_input(
+        batch_size=2,
+        seq_len=5,
+        embed_dim=8,
+    )
+
+    heads = mha._split_heads(x)
+    output = mha._combine_heads(heads)
+
+    assert output.shape == x.shape
+
+
+def test_split_and_combine_heads_are_inverse():
+    mha = nn.MultiHeadAttention(
+        embed_dim=12,
+        num_heads=3,
+        dropout=0.0,
+    )
+
+    x = make_input(
+        batch_size=2,
+        seq_len=7,
+        embed_dim=12,
+    )
+
+    heads = mha._split_heads(x)
+    reconstructed = mha._combine_heads(heads)
+
+    np.testing.assert_allclose(
+        reconstructed.numpy(),
+        x.numpy(),
+        rtol=1e-6,
+        atol=1e-6,
+    )
+
+
+# ============================================================
+# Constructor
+# ============================================================
+
+def test_multihead_attention_invalid_embed_dim():
+    """
+    embed_dim must be divisible by num_heads.
+    """
+
+    with pytest.raises(ValueError):
+        nn.MultiHeadAttention(
+            embed_dim=10,
+            num_heads=3,
+        )
+
+
+def test_multihead_attention_head_dim():
+    mha = nn.MultiHeadAttention(
+        embed_dim=12,
+        num_heads=3,
+    )
+
+    assert mha.embed_dim == 12
+    assert mha.num_heads == 3
+    assert mha.head_dim == 4
+
+
+# ============================================================
+# Basic self-attention
+# ============================================================
+
+def test_multihead_attention_self_attention_shape():
+    """
+    Self-attention:
+
+        query = key = value = x
+
+    Input:
+        (B, L, D)
+
+    Output:
+        (B, L, D)
+    """
+
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        dropout=0.0,
+    )
+
+    x = make_input(
+        batch_size=2,
+        seq_len=5,
+        embed_dim=8,
+    )
+
+    output = mha(x, x, x)
+
+    assert output.shape == (2, 5, 8)
+
+
+def test_multihead_attention_different_batch_sizes():
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        dropout=0.0,
+    )
+
+    for batch_size in [1, 2, 4, 8]:
+        x = make_input(
+            batch_size=batch_size,
+            seq_len=5,
+            embed_dim=8,
+        )
+
+        output = mha(x, x, x)
+
+        assert output.shape == (
+            batch_size,
+            5,
+            8,
+        )
+
+
+def test_multihead_attention_different_sequence_lengths():
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        dropout=0.0,
+    )
+
+    for seq_len in [1, 2, 5, 10]:
+        x = make_input(
+            batch_size=2,
+            seq_len=seq_len,
+            embed_dim=8,
+        )
+
+        output = mha(x, x, x)
+
+        assert output.shape == (
+            2,
+            seq_len,
+            8,
+        )
+
+
+# ============================================================
+# Different number of heads
+# ============================================================
+
+def test_multihead_attention_different_num_heads():
+    """
+    Different numbers of heads should preserve the final
+    embedding dimension.
+    """
+
+    embed_dim = 12
+
+    for num_heads in [1, 2, 3, 4, 6, 12]:
+        mha = nn.MultiHeadAttention(
+            embed_dim=embed_dim,
+            num_heads=num_heads,
+            dropout=0.0,
+        )
+
+        x = make_input(
+            batch_size=2,
+            seq_len=5,
+            embed_dim=embed_dim,
+        )
+
+        output = mha(x, x, x)
+
+        assert output.shape == (
+            2,
+            5,
+            embed_dim,
+        )
+
+
+# ============================================================
+# Cross-attention
+# ============================================================
+
+def test_multihead_attention_cross_attention():
+    """
+    Query and key/value can have different sequence lengths.
+
+    query:
+        (B, Lq, D)
+
+    key/value:
+        (B, Lk, D)
+
+    output:
+        (B, Lq, D)
+    """
+
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        dropout=0.0,
+    )
+
+    query = make_input(
+        batch_size=2,
+        seq_len=3,
+        embed_dim=8,
+        seed=1,
+    )
+
+    key = make_input(
+        batch_size=2,
+        seq_len=7,
+        embed_dim=8,
+        seed=2,
+    )
+
+    value = make_input(
+        batch_size=2,
+        seq_len=7,
+        embed_dim=8,
+        seed=3,
+    )
+
+    output = mha(
+        query,
+        key,
+        value,
+    )
+
+    assert output.shape == (2, 3, 8)
+
+
+def test_multihead_attention_cross_attention_different_lengths():
+    mha = nn.MultiHeadAttention(
+        embed_dim=12,
+        num_heads=3,
+        dropout=0.0,
+    )
+
+    query = make_input(
+        batch_size=2,
+        seq_len=4,
+        embed_dim=12,
+        seed=1,
+    )
+
+    key = make_input(
+        batch_size=2,
+        seq_len=9,
+        embed_dim=12,
+        seed=2,
+    )
+
+    value = make_input(
+        batch_size=2,
+        seq_len=9,
+        embed_dim=12,
+        seed=3,
+    )
+
+    output = mha(query, key, value)
+
+    assert output.shape == (2, 4, 12)
+
+
+# ============================================================
+# Mask
+# ============================================================
+
+def test_multihead_attention_causal_mask():
+    """
+    Test that MultiHeadAttention accepts a causal mask.
+
+        0   -inf -inf
+        0    0   -inf
+        0    0    0
+    """
+
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        dropout=0.0,
+    )
+
+    x = make_input(
+        batch_size=2,
+        seq_len=3,
+        embed_dim=8,
+    )
+
+    mask = torch.Tensor(
+        np.array([
+            [0.0, -np.inf, -np.inf],
+            [0.0,  0.0,     -np.inf],
+            [0.0,  0.0,      0.0],
+        ])
+    )
+
+    output = mha(
+        x,
+        x,
+        x,
+        mask=mask,
+    )
+
+    assert output.shape == (2, 3, 8)
+    assert np.all(np.isfinite(output.numpy()))
+
+
+# ============================================================
+# Determinism
+# ============================================================
+
+def test_multihead_attention_deterministic_without_dropout():
+    """
+    dropout=0 should make repeated forward passes produce
+    the same result.
+    """
+
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        dropout=0.0,
+    )
+
+    x = make_input(
+        batch_size=2,
+        seq_len=5,
+        embed_dim=8,
+    )
+
+    output1 = mha(x, x, x)
+    output2 = mha(x, x, x)
+
+    np.testing.assert_allclose(
+        output1.numpy(),
+        output2.numpy(),
+        rtol=1e-6,
+        atol=1e-6,
+    )
+
+
+# ============================================================
+# Output should depend on input
+# ============================================================
+
+def test_multihead_attention_output_changes_with_input():
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        dropout=0.0,
+    )
+
+    x1 = make_input(
+        batch_size=2,
+        seq_len=5,
+        embed_dim=8,
+        seed=1,
+    )
+
+    x2 = make_input(
+        batch_size=2,
+        seq_len=5,
+        embed_dim=8,
+        seed=2,
+    )
+
+    y1 = mha(x1, x1, x1)
+    y2 = mha(x2, x2, x2)
+
+    assert not np.allclose(
+        y1.numpy(),
+        y2.numpy(),
+    )
+
+
+# ============================================================
+# Batch independence
+# ============================================================
+
+def test_multihead_attention_batch_independence():
+    """
+    Attention should operate independently on each batch item.
+
+    Changing sample 1 must not affect sample 0.
+    """
+
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        dropout=0.0,
+    )
+
+    rng = np.random.default_rng(42)
+
+    x1_np = rng.standard_normal((2, 5, 8))
+    x2_np = x1_np.copy()
+
+    # Change only the second sample.
+    x2_np[1] += 100.0
+
+    x1 = torch.Tensor(x1_np)
+    x2 = torch.Tensor(x2_np)
+
+    y1 = mha(x1, x1, x1)
+    y2 = mha(x2, x2, x2)
+
+    # First batch item must remain unchanged.
+    np.testing.assert_allclose(
+        y1.numpy()[0],
+        y2.numpy()[0],
+        rtol=1e-5,
+        atol=1e-5,
+    )
+
+
+# ============================================================
+# Gradient flow
+# ============================================================
+
+def test_multihead_attention_backward():
+    """
+    Verify that gradients flow through:
+
+        input
+          ↓
+        Q/K/V
+          ↓
+       attention
+          ↓
+       out_proj
+    """
+
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        dropout=0.0,
+    )
+
+    x = make_input(
+        batch_size=2,
+        seq_len=4,
+        embed_dim=8,
+    )
+
+    x.requires_grad = True
+
+    output = mha(x, x, x)
+
+    loss = output.sum()
+
+    loss.backward()
+
+    assert x.grad is not None
+
+    for name, parameter in mha.named_parameters():
+        assert parameter.grad is not None, (
+            f"Missing gradient for parameter: {name}"
+        )
+
+
+# ============================================================
+# Projection dimensions
+# ============================================================
+
+def test_multihead_attention_projection_shapes():
+    mha = nn.MultiHeadAttention(
+        embed_dim=16,
+        num_heads=4,
+        dropout=0.0,
+    )
+
+    assert mha.q_proj.weight.shape == (16, 16)
+    assert mha.k_proj.weight.shape == (16, 16)
+    assert mha.v_proj.weight.shape == (16, 16)
+    assert mha.out_proj.weight.shape == (16, 16)
+
+
+# ============================================================
+# Single-head should still work
+# ============================================================
+
+def test_multihead_attention_single_head():
+    """
+    MultiHeadAttention with num_heads=1 should still work.
+
+    In this case:
+
+        head_dim = embed_dim
+    """
+
+    mha = nn.MultiHeadAttention(
+        embed_dim=8,
+        num_heads=1,
+        dropout=0.0,
+    )
+
+    x = make_input(
+        batch_size=2,
+        seq_len=5,
+        embed_dim=8,
+    )
+
+    output = mha(x, x, x)
+
+    assert output.shape == (2, 5, 8)

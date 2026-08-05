@@ -47,4 +47,5 @@ __all__ = [
     
     "ScaledDotProductAttention",
     "SelfAttention",
+    "MultiHeadAttention",
 ]
