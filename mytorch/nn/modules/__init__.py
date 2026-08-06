@@ -10,6 +10,7 @@ from .layernorm import *
 from .dropout import *
 from .loss import *
 from .attention import *
+from .positional_encoding import *
 
 __all__ = [
     "Module",
@@ -48,4 +49,6 @@ __all__ = [
     "ScaledDotProductAttention",
     "SelfAttention",
     "MultiHeadAttention",
+    
+    "PositionalEncoding",
 ]
