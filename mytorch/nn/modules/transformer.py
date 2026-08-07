@@ -14,7 +14,7 @@ class TransformerEncoderLayer(Module):
         nhead,
         dim_feedforward=2048,
         dropout=0.1,
-        activation="gelu",
+        activation="relu",
     ):
         super().__init__()
 
@@ -37,7 +37,7 @@ class TransformerEncoderLayer(Module):
         self.dropout1 = Dropout(dropout)
         self.dropout2 = Dropout(dropout)
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor, src_mask=None):
         # Self-attention
         residual = x
 
@@ -47,6 +47,7 @@ class TransformerEncoderLayer(Module):
             x,
             x,
             x,
+            mask=src_mask,
         )
 
         x = residual + self.dropout1(x)
@@ -76,9 +77,9 @@ class TransformerEncoder(Module):
             for _ in range(num_layers)
         ])
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor, mask=None):
         for layer in self.layers:
-            x = layer(x)
+            x = layer(x, mask)
 
         return x
     
@@ -89,6 +90,7 @@ class TransformerDecoderLayer(Module):
         nhead,
         dim_feedforward=2048,
         dropout=0.1,
+        activation="relu",
     ):
         super().__init__()
         
@@ -98,6 +100,7 @@ class TransformerDecoderLayer(Module):
         self.ffn = FeedForward(
             d_model,
             dim_feedforward,
+            activation=activation
         )
 
         self.norm1 = LayerNorm(d_model)
@@ -148,7 +151,11 @@ class TransformerDecoderLayer(Module):
         return x
     
 class TransformerDecoder(Module):
-    def __init__(self, decoder_layer, num_layers):
+    def __init__(
+        self, 
+        decoder_layer, 
+        num_layers
+    ):
         super().__init__()
         
         self.layers = ModuleList([
@@ -165,3 +172,82 @@ class TransformerDecoder(Module):
             )
 
         return x
+    
+class Transformer(Module):
+    def __init__(
+        self,
+        d_model=512,
+        nhead=8,
+        num_encoder_layers=6,
+        num_decoder_layers=6,
+        dim_feedforward=2048,
+        dropout=0.1,
+        activation="relu",
+        custom_encoder=None,
+        custom_decoder=None,
+        batch_first=True,
+    ):
+        super().__init__()
+        
+        if custom_encoder is not None:
+            self.encoder = custom_encoder
+        else:
+            encoder_layer = TransformerEncoderLayer(
+                d_model=d_model,
+                nhead=nhead,
+                dim_feedforward=dim_feedforward,
+                dropout=dropout,
+                activation=activation,
+            )
+
+            self.encoder = TransformerEncoder(
+                encoder_layer,
+                num_encoder_layers,
+            )
+
+        if custom_decoder is not None:
+            self.decoder = custom_decoder
+        else:
+            decoder_layer = TransformerDecoderLayer(
+                d_model=d_model,
+                nhead=nhead,
+                dim_feedforward=dim_feedforward,
+                dropout=dropout,
+                activation=activation,
+            )
+
+            self.decoder = TransformerDecoder(
+                decoder_layer,
+                num_decoder_layers,
+            )
+
+        self.batch_first = batch_first
+        
+    def forward(
+        self,
+        src: Tensor,
+        tgt: Tensor,
+        src_mask=None,
+        tgt_mask=None,
+    ):
+        super().__init__()
+        
+        if not self.batch_first:
+            src = src.transpose(0, 1)
+            tgt = tgt.transpose(0, 1)
+            
+        memory = self.encoder(
+            src,
+            mask=src_mask,
+        )
+
+        output = self.decoder(
+            tgt,
+            memory,
+            tgt_mask=tgt_mask,
+        )
+        
+        if not self.batch_first:
+            output = output.transpose(0, 1)
+
+        return output
