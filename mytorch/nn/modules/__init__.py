@@ -11,6 +11,7 @@ from .dropout import *
 from .loss import *
 from .attention import *
 from .positional_encoding import *
+from .transformer import *
 
 __all__ = [
     "Module",
@@ -51,4 +52,7 @@ __all__ = [
     "MultiHeadAttention",
     
     "PositionalEncoding",
+    
+    "TransformerEncoderLayer",
+    "TransformerEncoder",
 ]

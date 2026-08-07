@@ -13,16 +13,16 @@ class FeedForward(Module):
     def __init__(
         self,
         d_model,
-        d_ff,
+        dim_feedforward,
         dropout=0.0,
         activation="gelu",
     ):
         super().__init__()
 
-        self.linear1 = Linear(d_model, d_ff)
+        self.linear1 = Linear(d_model, dim_feedforward)
         self.activation = _ACTIVATIONS[activation]()
         self.dropout = Dropout(dropout)
-        self.linear2 = Linear(d_ff, d_model)
+        self.linear2 = Linear(dim_feedforward, d_model)
         
     def forward(self, x: Tensor):
         x = self.linear1(x)
