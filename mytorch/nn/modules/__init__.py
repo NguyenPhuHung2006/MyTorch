@@ -55,4 +55,7 @@ __all__ = [
     
     "TransformerEncoderLayer",
     "TransformerEncoder",
+    
+    "TransformerDecoderLayer",
+    "TransformerDecoder",
 ]

@@ -44,13 +44,17 @@ class MNISTTransformer(nn.Module):
             d_model=D_MODEL,
             max_seq_len=28,
         )
-
-        self.encoder = nn.TransformerEncoder(
+        
+        encoder_layer = nn.TransformerEncoderLayer(
             d_model=D_MODEL,
             nhead=N_HEAD,
-            num_layers=N_LAYERS,
             dim_feedforward=D_FF,
             dropout=DROPOUT,
+        )
+
+        self.encoder = nn.TransformerEncoder(
+            encoder_layer=encoder_layer,
+            num_layers=N_LAYERS,
         )
 
         self.classifier = nn.Linear(D_MODEL, 10)
