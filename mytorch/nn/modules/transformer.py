@@ -5,6 +5,7 @@ from .feedforward import FeedForward
 from .layernorm import LayerNorm
 from .dropout import Dropout
 from copy import deepcopy
+from ...tensor import Tensor
 
 class TransformerEncoderLayer(Module):
     def __init__(
@@ -36,7 +37,7 @@ class TransformerEncoderLayer(Module):
         self.dropout1 = Dropout(dropout)
         self.dropout2 = Dropout(dropout)
 
-    def forward(self, x):
+    def forward(self, x: Tensor):
         # Self-attention
         residual = x
 
@@ -75,7 +76,7 @@ class TransformerEncoder(Module):
             for _ in range(num_layers)
         ])
 
-    def forward(self, x):
+    def forward(self, x: Tensor):
         for layer in self.layers:
             x = layer(x)
 
@@ -107,7 +108,7 @@ class TransformerDecoderLayer(Module):
         self.dropout2 = Dropout(dropout)
         self.dropout3 = Dropout(dropout)
     
-    def forward(self, x, memory, tgt_mask=None):
+    def forward(self, x: Tensor, memory: Tensor, tgt_mask=None):
         # Masked self-attention
         residual = x
 
@@ -155,7 +156,7 @@ class TransformerDecoder(Module):
             for _ in range(num_layers)
         ])
 
-    def forward(self, x, memory, tgt_mask=None):
+    def forward(self, x: Tensor, memory: Tensor, tgt_mask=None):
         for layer in self.layers:
             x = layer(
                 x,
