@@ -12,6 +12,7 @@ from .loss import *
 from .attention import *
 from .positional_encoding import *
 from .transformer import *
+from .embedding import Embedding
 
 __all__ = [
     "Module",
@@ -59,4 +60,6 @@ __all__ = [
     "TransformerDecoderLayer",
     "TransformerDecoder",
     "Transformer",
+    
+    "Embedding",
 ]
