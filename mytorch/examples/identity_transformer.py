@@ -7,15 +7,14 @@ import numpy as np
 
 VOCAB_SIZE = 12
 
-PAD_IDX = 0
 BOS_IDX = VOCAB_SIZE - 2
 EOS_IDX = VOCAB_SIZE - 1
 
 D_MODEL = 32
 NHEAD = 4
 
-NUM_ENCODER_LAYERS = 2
-NUM_DECODER_LAYERS = 2
+NUM_ENCODER_LAYERS = 1
+NUM_DECODER_LAYERS = 1
 
 DIM_FEEDFORWARD = 64
 
@@ -36,19 +35,19 @@ def generate_dataset(num_samples):
     target = [BOS, tokens..., EOS]
     """
 
-    data = np.random.randint(
+    src = np.random.randint(
         0,
         VOCAB_SIZE - 2,
         size=(num_samples, SEQ_LEN),
     )
 
-    src = np.concatenate(
+    tgt = np.concatenate(
         [
             np.full(
                 (num_samples, 1),
                 BOS_IDX,
             ),
-            data,
+            src,
             np.full(
                 (num_samples, 1),
                 EOS_IDX,
@@ -56,8 +55,6 @@ def generate_dataset(num_samples):
         ],
         axis=1,
     )
-
-    tgt = src.copy()
 
     return src, tgt
 
@@ -72,6 +69,11 @@ class CopyTransformer(nn.Module):
         self.embedding = nn.Embedding(
             VOCAB_SIZE,
             D_MODEL,
+        )
+        
+        self.positional_encoding = nn.PositionalEncoding(
+            d_model=D_MODEL,
+            max_seq_len=SEQ_LEN + 1,
         )
 
         self.transformer = nn.Transformer(
@@ -96,8 +98,10 @@ class CopyTransformer(nn.Module):
         tgt_mask=None,
     ):
         src = self.embedding(src)
-
         tgt = self.embedding(tgt)
+        
+        src = self.positional_encoding(src)
+        tgt = self.positional_encoding(tgt)
 
         output = self.transformer(
             src,
@@ -212,6 +216,7 @@ def generate(model, src, max_len):
 
     # Encode source
     src_emb = model.embedding(src)
+    src_emb = model.positional_encoding(src_emb)
 
     memory = model.transformer.encoder(
         src_emb
@@ -228,6 +233,7 @@ def generate(model, src, max_len):
         tgt = torch.Tensor(generated)
 
         tgt_emb = model.embedding(tgt)
+        tgt_emb = model.positional_encoding(tgt_emb)
 
         tgt_mask = causal_mask(
             generated.shape[1]
@@ -264,7 +270,7 @@ def generate(model, src, max_len):
 
 src = torch.Tensor(
     np.array([
-        [BOS_IDX, 4, 7, 2, 9, EOS_IDX]
+        [4, 7, 2, 9, 2, 3]
     ])
 )
 
