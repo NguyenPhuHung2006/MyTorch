@@ -196,6 +196,10 @@ class Tensor:
         from .ops.movement import Clone
         return Clone.apply(self)
     
+    def expand(self, *shape):
+        from .ops.movement import Expand
+        return Expand.apply(self, shape)
+    
     def flatten(self, start_dim=0, end_dim=-1):
         shape = self.shape
         ndim = len(shape)

@@ -2,6 +2,7 @@ from ..autograd.function import Function
 from ..autograd.context import Context
 from ..tensor import Tensor
 import numpy as np
+from ..utils.broadcast import unbroadcast
 
 class Transpose(Function):
     @staticmethod
@@ -114,3 +115,15 @@ def cat(tensors, axis=0):
 
 def stack(tensors, axis=0):
     return Stack.apply(*tensors, axis=axis)
+
+class Expand(Function):
+    def forward(ctx: Context, x: np.ndarray, shape):
+        ctx.saved_data["input_shape"] = x.shape
+        return np.broadcast_to(x, shape)
+        
+    def backward(ctx: Context, grad_output: np.ndarray):
+        input_shape = ctx.saved_data["input_shape"]
+        
+        grad_x = unbroadcast(grad_output, input_shape)
+        
+        return (grad_x,)

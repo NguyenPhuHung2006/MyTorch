@@ -404,3 +404,355 @@ def test_stack_shape_mismatch():
 
     with np.testing.assert_raises(ValueError):
         stack([a, b], axis=0)
+        
+import numpy as np
+import pytest
+
+from mytorch import Tensor
+
+
+# ============================================================
+# Forward tests
+# ============================================================
+
+def test_expand_first_dimension():
+    x = Tensor(
+        np.array([[1, 2, 3]])
+    )
+
+    # (1, 3) -> (4, 3)
+    y = x.expand(4, 3)
+
+    expected = np.array([
+        [1, 2, 3],
+        [1, 2, 3],
+        [1, 2, 3],
+        [1, 2, 3],
+    ])
+
+    assert y.shape == (4, 3)
+    np.testing.assert_array_equal(y.data, expected)
+
+
+def test_expand_middle_dimension():
+    x = Tensor(
+        np.array([
+            [[1, 2, 3]],
+            [[4, 5, 6]],
+        ])
+    )
+
+    # (2, 1, 3) -> (2, 4, 3)
+    y = x.expand(2, 4, 3)
+
+    expected = np.array([
+        [
+            [1, 2, 3],
+            [1, 2, 3],
+            [1, 2, 3],
+            [1, 2, 3],
+        ],
+        [
+            [4, 5, 6],
+            [4, 5, 6],
+            [4, 5, 6],
+            [4, 5, 6],
+        ],
+    ])
+
+    assert y.shape == (2, 4, 3)
+    np.testing.assert_array_equal(y.data, expected)
+
+
+def test_expand_multiple_dimensions():
+    x = Tensor(
+        np.array([[[5]]])
+    )
+
+    # (1, 1, 1) -> (2, 3, 4)
+    y = x.expand(2, 3, 4)
+
+    expected = np.full(
+        (2, 3, 4),
+        5,
+    )
+
+    assert y.shape == (2, 3, 4)
+    np.testing.assert_array_equal(y.data, expected)
+
+
+def test_expand_add_leading_dimension():
+    x = Tensor(
+        np.array([1, 2, 3])
+    )
+
+    # (3,) -> (4, 3)
+    y = x.expand(4, 3)
+
+    expected = np.array([
+        [1, 2, 3],
+        [1, 2, 3],
+        [1, 2, 3],
+        [1, 2, 3],
+    ])
+
+    assert y.shape == (4, 3)
+    np.testing.assert_array_equal(y.data, expected)
+
+
+def test_expand_same_shape():
+    x = Tensor(
+        np.array([
+            [1, 2],
+            [3, 4],
+        ])
+    )
+
+    y = x.expand(2, 2)
+
+    assert y.shape == (2, 2)
+    np.testing.assert_array_equal(y.data, x.data)
+
+
+# ============================================================
+# Invalid expansion tests
+# ============================================================
+
+def test_expand_invalid_dimension():
+    x = Tensor(
+        np.array([
+            [1, 2, 3],
+        ])
+    )
+
+    # (1, 3) cannot become (2, 4)
+    with pytest.raises(ValueError):
+        x.expand(2, 4)
+
+
+def test_expand_non_singleton_dimension():
+    x = Tensor(
+        np.array([
+            [1, 2, 3],
+            [4, 5, 6],
+        ])
+    )
+
+    # Dimension 0 has size 2 and cannot become 3
+    with pytest.raises(ValueError):
+        x.expand(3, 3)
+
+
+def test_expand_too_few_dimensions():
+    x = Tensor(
+        np.ones((2, 3))
+    )
+
+    # Cannot remove dimensions with expand
+    with pytest.raises(ValueError):
+        x.expand(3)
+
+
+# ============================================================
+# Backward tests
+# ============================================================
+
+def test_expand_backward_first_dimension():
+    x = Tensor(
+        np.array([[1.0, 2.0, 3.0]]),
+        requires_grad=True,
+    )
+
+    y = x.expand(4, 3)
+
+    loss = y.sum()
+    loss.backward()
+
+    # Each value was expanded 4 times.
+    expected_grad = np.array([
+        [4.0, 4.0, 4.0],
+    ])
+
+    np.testing.assert_allclose(
+        x.grad,
+        expected_grad,
+    )
+
+
+def test_expand_backward_middle_dimension():
+    x = Tensor(
+        np.array([
+            [[1.0, 2.0, 3.0]],
+            [[4.0, 5.0, 6.0]],
+        ]),
+        requires_grad=True,
+    )
+
+    # (2, 1, 3) -> (2, 4, 3)
+    y = x.expand(2, 4, 3)
+
+    loss = y.sum()
+    loss.backward()
+
+    expected_grad = np.array([
+        [[4.0, 4.0, 4.0]],
+        [[4.0, 4.0, 4.0]],
+    ])
+
+    np.testing.assert_allclose(
+        x.grad,
+        expected_grad,
+    )
+
+
+def test_expand_backward_multiple_dimensions():
+    x = Tensor(
+        np.array([[[1.0]]]),
+        requires_grad=True,
+    )
+
+    # (1, 1, 1) -> (2, 3, 4)
+    y = x.expand(2, 3, 4)
+
+    loss = y.sum()
+    loss.backward()
+
+    # The value appears 2 * 3 * 4 = 24 times.
+    expected_grad = np.array([
+        [[24.0]],
+    ])
+
+    np.testing.assert_allclose(
+        x.grad,
+        expected_grad,
+    )
+
+
+def test_expand_backward_leading_dimension():
+    x = Tensor(
+        np.array([1.0, 2.0, 3.0]),
+        requires_grad=True,
+    )
+
+    # (3,) -> (5, 3)
+    y = x.expand(5, 3)
+
+    loss = y.sum()
+    loss.backward()
+
+    expected_grad = np.array([
+        5.0,
+        5.0,
+        5.0,
+    ])
+
+    np.testing.assert_allclose(
+        x.grad,
+        expected_grad,
+    )
+
+
+# ============================================================
+# Non-uniform gradient test
+# ============================================================
+
+def test_expand_backward_non_uniform_gradient():
+    x = Tensor(
+        np.array([[1.0, 2.0, 3.0]]),
+        requires_grad=True,
+    )
+
+    y = x.expand(3, 3)
+
+    # Give every output element a different gradient.
+    weights = Tensor(
+        np.array([
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 9.0],
+        ])
+    )
+
+    loss = (y * weights).sum()
+    loss.backward()
+
+    # Gradient must be summed along the expanded
+    # first dimension:
+    #
+    # [1 + 4 + 7,
+    #  2 + 5 + 8,
+    #  3 + 6 + 9]
+    expected_grad = np.array([
+        [12.0, 15.0, 18.0],
+    ])
+
+    np.testing.assert_allclose(
+        x.grad,
+        expected_grad,
+    )
+
+
+# ============================================================
+# CLS-token-like tests
+# ============================================================
+
+def test_expand_cls_token():
+    d_model = 8
+    batch_size = 16
+
+    x = Tensor(
+        np.random.randn(1, 1, d_model),
+        requires_grad=True,
+    )
+
+    y = x.expand(
+        batch_size,
+        1,
+        d_model,
+    )
+
+    assert y.shape == (
+        batch_size,
+        1,
+        d_model,
+    )
+
+    # Every batch element should contain
+    # the same CLS token.
+    for i in range(batch_size):
+        np.testing.assert_array_equal(
+            y.data[i],
+            x.data[0],
+        )
+
+
+def test_expand_cls_token_backward():
+    d_model = 8
+    batch_size = 16
+
+    x = Tensor(
+        np.random.randn(1, 1, d_model),
+        requires_grad=True,
+    )
+
+    y = x.expand(
+        batch_size,
+        1,
+        d_model,
+    )
+
+    loss = y.sum()
+    loss.backward()
+
+    # The same CLS parameter is shared by every
+    # sample, so gradients accumulate over batch.
+    expected_grad = np.full(
+        (1, 1, d_model),
+        batch_size,
+        dtype=float,
+    )
+
+    np.testing.assert_allclose(
+        x.grad,
+        expected_grad,
+    )
