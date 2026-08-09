@@ -52,7 +52,7 @@ class MNISTSolver(nn.Module):
     def forward(self, x):
         return self.layers(x)
     
-EPOCHS = 20
+EPOCHS = 2
 criterion = nn.CrossEntropyLoss()
 model = MNISTSolver()
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
