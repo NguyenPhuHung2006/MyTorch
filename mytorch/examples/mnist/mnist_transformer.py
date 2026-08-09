@@ -36,19 +36,54 @@ DROPOUT = 0.1
 EPOCHS = 20
 USE_CLS = False
 
+USE_PATCH = True
+PATCH_SIZE = 7
+
+def patchify(x: torch.Tensor, patch_size):
+    B, H, W = x.shape
+
+    h = H // patch_size
+    w = W // patch_size
+
+    x = x.reshape(
+        B,
+        h,
+        patch_size,
+        w,
+        patch_size,
+    )
+
+    x = x.transpose(2, 3)
+
+    x = x.reshape(
+        B,
+        h * w,
+        patch_size * patch_size,
+    )
+
+    return x
+
 class MNISTTransformer(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.input_projection = nn.Linear(28, D_MODEL)
+        self.patch_size = PATCH_SIZE
+        self.num_patches = (
+            28 // self.patch_size
+        ) ** 2
+        
+        num_input_features = 28 if not USE_PATCH else self.patch_size ** 2
+        
+        self.input_projection = nn.Linear(num_input_features, D_MODEL)
         
         self.cls_token = nn.Parameter(
             np.random.randn(1, 1, D_MODEL)
         )
 
+        max_seq_len = (1 if USE_CLS else 0) + (self.num_patches if USE_PATCH else 28)
         self.positional_encoding = nn.PositionalEncoding(
             d_model=D_MODEL,
-            max_seq_len=29,
+            max_seq_len=max_seq_len,
         )
         
         encoder_layer = nn.TransformerEncoderLayer(
@@ -67,6 +102,12 @@ class MNISTTransformer(nn.Module):
 
     def forward(self, x):
         # x: (B, 28, 28)
+        
+        if USE_PATCH:
+            # -> (B, 16, 49)
+            x = patchify(x, self.patch_size)
+        
+        # -> (B, 16, D_MODEL)
         x = self.input_projection(x)
         
         batch_size = x.shape[0]
