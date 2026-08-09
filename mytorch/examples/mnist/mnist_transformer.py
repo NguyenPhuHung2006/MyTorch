@@ -53,8 +53,16 @@ def patchify(x: torch.Tensor, patch_size):
         patch_size,
     )
 
-    x = x.transpose(2, 3)
+    # x = x.transpose(2, 3)
 
+    x = x.permute(
+        0,
+        1,
+        3,
+        2,
+        4,
+    )
+    
     x = x.reshape(
         B,
         h * w,

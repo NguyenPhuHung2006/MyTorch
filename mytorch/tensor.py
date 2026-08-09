@@ -186,6 +186,10 @@ class Tensor:
         from .ops.movement import Transpose
         return Transpose.apply(self, dim0, dim1)
     
+    def permute(self, *dims):
+        from .ops.movement import Permute
+        return Permute.apply(self, dims)
+    
     def reshape(self, *shape):
         if len(shape) == 1:
             shape = shape[0]

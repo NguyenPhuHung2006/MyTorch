@@ -127,3 +127,19 @@ class Expand(Function):
         grad_x = unbroadcast(grad_output, input_shape)
         
         return (grad_x,)
+    
+class Permute(Function):
+    def forward(ctx: Context, x: np.ndarray, dims):
+        ctx.saved_data["dims"] = dims
+        return np.transpose(x, axes=dims)
+    
+    def backward(ctx: Context, grad_output: np.ndarray):
+        dims = ctx.saved_data["dims"]
+        inverse = np.argsort(dims)
+        
+        grad_x = np.transpose(
+            grad_output,
+            axes=inverse,
+        )
+
+        return (grad_x,)
