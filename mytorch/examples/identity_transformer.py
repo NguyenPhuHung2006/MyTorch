@@ -22,9 +22,11 @@ SEQ_LEN = 6
 BATCH_SIZE = 32
 
 NUM_SAMPLES = 5000
-EPOCHS = 30
+EPOCHS = 20
 
 LR = 1e-3
+
+NUM_EVAL_SAMPLES = 1000
 
 def generate_dataset(num_samples):
     """
@@ -214,18 +216,22 @@ for epoch in range(EPOCHS):
 def generate(model, src, max_len):
     model.eval()
 
-    # Encode source
+    batch_size = src.shape[0]
+
     src_emb = model.embedding(src)
     src_emb = model.positional_encoding(src_emb)
 
-    memory = model.transformer.encoder(
-        src_emb
+    memory = model.transformer.encoder(src_emb)
+
+    generated = np.full(
+        (batch_size, 1),
+        BOS_IDX,
+        dtype=np.int64,
     )
 
-    # Start with BOS
-    generated = np.array(
-        [[BOS_IDX]],
-        dtype=np.int64,
+    finished = np.zeros(
+        batch_size,
+        dtype=bool,
     )
 
     for _ in range(max_len):
@@ -235,9 +241,7 @@ def generate(model, src, max_len):
         tgt_emb = model.embedding(tgt)
         tgt_emb = model.positional_encoding(tgt_emb)
 
-        tgt_mask = causal_mask(
-            generated.shape[1]
-        )
+        tgt_mask = causal_mask(generated.shape[1])
 
         decoder_output = model.transformer.decoder(
             tgt_emb,
@@ -245,15 +249,16 @@ def generate(model, src, max_len):
             tgt_mask=tgt_mask,
         )
 
-        logits = model.output_projection(
-            decoder_output
-        )
+        logits = model.output_projection(decoder_output)
 
-        # Last timestep
         next_token = np.argmax(
             logits.data[:, -1, :],
             axis=-1,
         )
+
+        # Don't generate anything new for samples
+        # that have already reached EOS.
+        next_token[finished] = EOS_IDX
 
         generated = np.concatenate(
             [
@@ -263,16 +268,19 @@ def generate(model, src, max_len):
             axis=1,
         )
 
-        if next_token[0] == EOS_IDX:
+        # Update finished mask
+        finished |= next_token == EOS_IDX
+
+        # Stop only when EVERY sample is finished
+        if np.all(finished):
             break
 
     return generated
 
-src = torch.Tensor(
-    np.array([
-        [4, 7, 2, 9, 2, 3]
-    ])
-)
+
+src, expected = generate_dataset(NUM_EVAL_SAMPLES)
+
+src = torch.Tensor(src)
 
 result = generate(
     model,
@@ -280,4 +288,62 @@ result = generate(
     max_len=SEQ_LEN + 1,
 )
 
-print(result)
+
+def clean_prediction(output):
+    output = np.asarray(output)
+
+    return output[
+        (output != BOS_IDX) &
+        (output != EOS_IDX)
+    ]
+
+import os
+
+base = "./mytorch/examples/outputs/identity_transformer/identity_transformer"
+
+i = 1
+while os.path.exists(f"{base}_{i}"):
+    i += 1
+
+output_dir = f"{base}_{i}"
+os.makedirs(output_dir, exist_ok=True)
+output_path = f"{output_dir}/result.txt"
+
+correct_count = 0
+wrong_samples = []
+
+for e, output in zip(expected, result):
+    output = clean_prediction(output)
+    e = clean_prediction(e)
+
+    if np.array_equal(e, output):
+        correct_count += 1
+    else:
+        wrong_samples.append((e, output))
+
+with open(output_path, "w") as f:
+    total = len(expected)
+
+    f.write("=" * 60 + "\n")
+    f.write("IDENTITY TRANSFORMER RESULTS\n")
+    f.write("=" * 60 + "\n\n")
+
+    f.write(f"Correct predictions: {correct_count}/{total}\n")
+    f.write(f"Wrong predictions:   {total - correct_count}/{total}\n\n")
+
+    f.write("=" * 60 + "\n")
+    f.write("WRONG PREDICTIONS\n")
+    f.write("=" * 60 + "\n\n")
+
+    for idx, (e, output) in enumerate(wrong_samples, start=1):
+        f.write(f"--- WRONG SAMPLE {idx} ---\n\n")
+
+        f.write("[ INPUT ]\n")
+        f.write(f"{e}\n\n")
+
+        f.write("[ OUTPUT ]\n")
+        f.write(f"{output}\n\n")
+
+        f.write("-" * 60 + "\n\n")
+
+print(f"Results written to: {output_path}")
