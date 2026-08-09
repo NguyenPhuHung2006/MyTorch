@@ -22,11 +22,13 @@ SEQ_LEN = 6
 BATCH_SIZE = 32
 
 NUM_SAMPLES = 5000
-EPOCHS = 20
+EPOCHS = 4
 
 LR = 1e-3
 
 NUM_EVAL_SAMPLES = 1000
+
+BASE = "./mytorch/examples/outputs/identity_transformer/identity_transformer"
 
 def generate_dataset(num_samples):
     """
@@ -299,13 +301,11 @@ def clean_prediction(output):
 
 import os
 
-base = "./mytorch/examples/outputs/identity_transformer/identity_transformer"
-
 i = 1
-while os.path.exists(f"{base}_{i}"):
+while os.path.exists(f"{BASE}_{i}"):
     i += 1
 
-output_dir = f"{base}_{i}"
+output_dir = f"{BASE}_{i}"
 os.makedirs(output_dir, exist_ok=True)
 output_path = f"{output_dir}/result.txt"
 
@@ -338,7 +338,7 @@ with open(output_path, "w") as f:
     for idx, (e, output) in enumerate(wrong_samples, start=1):
         f.write(f"--- WRONG SAMPLE {idx} ---\n\n")
 
-        f.write("[ INPUT ]\n")
+        f.write("[ EXPECTED ]\n")
         f.write(f"{e}\n\n")
 
         f.write("[ OUTPUT ]\n")
