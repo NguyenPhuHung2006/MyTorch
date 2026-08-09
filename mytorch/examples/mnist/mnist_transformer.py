@@ -33,16 +33,22 @@ N_HEAD = 4
 N_LAYERS = 1
 D_FF = 64
 DROPOUT = 0.1
+EPOCHS = 20
+USE_CLS = False
 
 class MNISTTransformer(nn.Module):
     def __init__(self):
         super().__init__()
 
         self.input_projection = nn.Linear(28, D_MODEL)
+        
+        self.cls_token = nn.Parameter(
+            np.random.randn(1, 1, D_MODEL)
+        )
 
         self.positional_encoding = nn.PositionalEncoding(
             d_model=D_MODEL,
-            max_seq_len=28,
+            max_seq_len=29,
         )
         
         encoder_layer = nn.TransformerEncoderLayer(
@@ -62,15 +68,27 @@ class MNISTTransformer(nn.Module):
     def forward(self, x):
         # x: (B, 28, 28)
         x = self.input_projection(x)
+        
+        batch_size = x.shape[0]
+        
+        if USE_CLS:
+            cls = self.cls_token.expand(batch_size, 1, D_MODEL)
+            x = torch.cat(
+                [cls, x],
+                axis=1,
+            )
+        
         x = self.positional_encoding(x)
         x = self.encoder(x)
 
-        x = x.mean(axis=1)
+        if USE_CLS:
+            x = x[:, 0, :]
+        else:
+            x = x.max(axis=1)
 
         return self.classifier(x)
         
-    
-EPOCHS = 20
+
 criterion = nn.CrossEntropyLoss()
 model = MNISTTransformer()
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
