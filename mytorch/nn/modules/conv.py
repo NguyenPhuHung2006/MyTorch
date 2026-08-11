@@ -6,33 +6,7 @@ from ...ops.conv import ConvNd as ConvNdFunction
 
 import numpy as np
 import math
-
-
-def _ntuple(n):
-    def parse(value):
-        if isinstance(value, int):
-            return (value,) * n
-
-        if not isinstance(value, tuple):
-            raise TypeError(
-                f"Expected an int or tuple of length {n}, "
-                f"got {type(value).__name__}."
-            )
-
-        if len(value) != n:
-            raise ValueError(
-                f"Expected a tuple of length {n}, "
-                f"got {len(value)}."
-            )
-
-        return value
-
-    return parse
-
-
-_pair = _ntuple(2)
-_triple = _ntuple(3)
-
+from ...utils.ntuple import ntuple
 
 class ConvNd(Module):
 
@@ -52,7 +26,7 @@ class ConvNd(Module):
 
         if self.spatial_dims is None:
             raise ValueError(
-                "ConvNd must define spatial_dims."
+                "ConvNd is an abstract base class."
             )
 
         if in_channels <= 0:
@@ -68,8 +42,7 @@ class ConvNd(Module):
         # --------------------------------------------------
         # Normalize spatial parameters
         # --------------------------------------------------
-
-        parse = _ntuple(self.spatial_dims)
+        parse = ntuple(self.spatial_dims)
 
         self.kernel_size = parse(kernel_size)
         self.stride = parse(stride)
