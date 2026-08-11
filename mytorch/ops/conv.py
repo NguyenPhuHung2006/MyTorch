@@ -201,12 +201,12 @@ class ConvNd(Function):
         #     Cin * K1 * K2 * ... * KD)
         # ---------------------------------------------------------
         
-        cols = windows.reshape(
+        x_cols = windows.reshape(
             x.shape[0] * np.prod(output_spatial_shape),
             -1,
         )
         
-        return cols, output_spatial_shape
+        return x_cols, output_spatial_shape
         
     
     @staticmethod
@@ -230,7 +230,7 @@ class ConvNd(Function):
         # ---------------------------------------------------------
         kernel_size = weight.shape[2:]
         
-        cols, output_spatial_shape = ConvNd._im2col(
+        x_cols, output_spatial_shape = ConvNd._im2col(
             x,
             kernel_size,
             stride,
@@ -268,7 +268,7 @@ class ConvNd(Function):
         #     (N * output_size, Cout)
         # ---------------------------------------------------------
         
-        output = cols @ weight_cols.T
+        output = x_cols @ weight_cols.T
         
         if bias is not None:
             # ---------------------------------------------------------
@@ -323,10 +323,23 @@ class ConvNd(Function):
         ctx.save_for_backward(
             x,
             weight,
-            cols,
+            x_cols,
         )
         
         return output
+    
+    @staticmethod
+    def _col2im(
+        x_cols,
+        x,
+        kernel_size,
+        stride,
+        padding, 
+        dilation,
+        output_spatial_shape,
+    ):
+        
+        
 
     @staticmethod
     def backward(ctx: Context, grad_output: np.ndarray):
@@ -335,7 +348,84 @@ class ConvNd(Function):
         dilation = ctx.saved_data["dilation"]
         output_spatial_shape = ctx.saved_data["output_spatial_shape"]
         
-        x, weight, cols = ctx.saved_tensors
+        x, weight, x_cols = ctx.saved_tensors
         
+        # --------------------------------------------------
+        # Convert:
+        #
+        # (N, Cout, O1, ..., OD)
+        #
+        # ->
+        #
+        # (N * O1 * ... * OD, Cout)
+        # --------------------------------------------------
+
+        grad_output_cols = np.moveaxis(
+            grad_output,
+            1,
+            -1,
+        )
+
+        grad_output_cols = grad_output_cols.reshape(
+            -1,
+            weight.shape[0],
+        )
+
+        # --------------------------------------------------
+        # Weight gradient
+        #
+        # dW = dY.T @ X_col
+        # --------------------------------------------------
+
+        grad_weight = (
+            grad_output_cols.T @ x_cols
+        )
+
+        grad_weight = grad_weight.reshape(
+            weight.shape
+        )
+
+        # --------------------------------------------------
+        # Bias gradient
+        # --------------------------------------------------
+
+        grad_bias = grad_output_cols.sum(
+            axis=0
+        )
+        
+        # --------------------------------------------------
+        # Input gradient
+        #
+        # dX_col = dY @ W
+        # --------------------------------------------------
+
+        weight_cols = weight.reshape(
+            weight.shape[0],
+            -1,
+        )
+
+        grad_x_cols = (
+            grad_output_cols @ weight_cols
+        )
+        
+        # --------------------------------------------------
+        # col2im
+        # --------------------------------------------------
+
+        grad_x = ConvNd._col2im(
+            grad_x_cols,
+            x.shape,
+            weight.shape[2:],
+            stride,
+            padding,
+            dilation,
+            output_spatial_shape,
+        )
+
+        return (
+            grad_x,
+            grad_weight,
+            grad_bias,
+        )
         
         
