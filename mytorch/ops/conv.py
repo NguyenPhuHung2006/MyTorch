@@ -319,26 +319,150 @@ class ConvNd(Function):
         ctx.saved_data["padding"] = padding
         ctx.saved_data["dilation"] = dilation
         ctx.saved_data["output_spatial_shape"] = output_spatial_shape
+        ctx.saved_data["x_shape"] = x.shape
         
-        ctx.save_for_backward(
-            x,
-            weight,
-            x_cols,
-        )
+        ctx.save_for_backward(x_cols, weight)
         
         return output
     
     @staticmethod
     def _col2im(
-        x_cols,
-        x,
-        kernel_size,
-        stride,
-        padding, 
-        dilation,
-        output_spatial_shape,
+        grad_x_cols: np.ndarray,
+        x_shape: tuple,
+        kernel_size: tuple,
+        stride: tuple,
+        padding: tuple,
+        dilation: tuple,
+        output_spatial_shape: tuple,
     ):
+        spatial_ndim = len(kernel_size)
+        N, C = x_shape[:2]
+        input_spatial_shape = x_shape[2:]
         
+        # ---------------------------------------------------------
+        # Reshape column gradients back into individual windows
+        #
+        # grad_x_cols:
+        #
+        #     (N * O1 * ... * OD,
+        #      C * K1 * ... * KD)
+        #
+        # becomes:
+        #
+        #     (N,
+        #      O1, ..., OD,
+        #      C,
+        #      K1, ..., KD)
+        #
+        # Each output position now has its corresponding
+        # kernel-sized gradient window.
+        # ---------------------------------------------------------
+        
+        windows = grad_x_cols.reshape(
+            N,
+            *output_spatial_shape,
+            C,
+            *kernel_size,
+        )
+        
+        padded_input_spatial_shape = tuple(
+            i + 2 * p
+            for i, p in zip(
+                input_spatial_shape,
+                padding,
+            )
+        )
+        
+        effective_kernel_size = tuple(
+            d * (k - 1) + 1
+            for d, k in zip(
+                dilation,
+                kernel_size,
+            )
+        )
+        
+        prev_windows_spatial_shape = tuple(
+            p_i - e_k + 1
+            for p_i, e_k in zip(
+                padded_input_spatial_shape,
+                effective_kernel_size,
+            )
+        )
+
+        prev_windows = np.zeros(
+            (
+                N,
+                *prev_windows_spatial_shape,
+                C,
+                *effective_kernel_size,
+            )
+        )
+        
+        spatial_slice = tuple(
+            slice(None, None, s)
+            for s in stride
+        )
+        
+        kernel_slice = tuple(
+            slice(None, None, d)
+            for d in dilation
+        )
+        
+        slices = (slice(None),) + spatial_slice + (slice(None),) + kernel_slice
+        
+        prev_windows[slices] = windows
+        
+        prev_windows = np.moveaxis(
+            prev_windows,
+            spatial_ndim + 1,
+            1,
+        )
+        
+        grad_x_padded = np.zeros(
+            (
+                N,
+                C,
+                *padded_input_spatial_shape,
+            )
+        )
+                
+        for k_pos in np.ndindex(effective_kernel_size):
+            x_slices = (
+                (slice(None), slice(None))
+                + tuple(
+                    slice(k_i, k_i + o_i)
+                    for k_i, o_i in zip(k_pos, prev_windows_spatial_shape)
+                )
+            )
+            
+            wnd_slices = (
+                (slice(None), slice(None))
+                + tuple(slice(None) for _ in range(spatial_ndim))
+                + k_pos
+            )
+            grad_x_padded[x_slices] += prev_windows[wnd_slices]
+            
+            
+        unpad_slices = tuple(
+            slice(
+                p,
+                p + size,
+            )
+            for p, size in zip(
+                padding,
+                input_spatial_shape,
+            )
+        )
+        
+        grad_x = grad_x_padded[
+            (
+                slice(None),
+                slice(None),
+                *unpad_slices,
+            )
+        ]
+
+        return grad_x
         
 
     @staticmethod
@@ -347,8 +471,9 @@ class ConvNd(Function):
         padding = ctx.saved_data["padding"]
         dilation = ctx.saved_data["dilation"]
         output_spatial_shape = ctx.saved_data["output_spatial_shape"]
+        x_shape = ctx.saved_data["x_shape"]
         
-        x, weight, x_cols = ctx.saved_tensors
+        x_cols, weight = ctx.saved_tensors
         
         # --------------------------------------------------
         # Convert:
@@ -414,7 +539,7 @@ class ConvNd(Function):
 
         grad_x = ConvNd._col2im(
             grad_x_cols,
-            x.shape,
+            x_shape,
             weight.shape[2:],
             stride,
             padding,

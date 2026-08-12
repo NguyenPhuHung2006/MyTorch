@@ -13,6 +13,8 @@ from .attention import *
 from .positional_encoding import *
 from .transformer import *
 from .embedding import Embedding
+from .conv import *
+from .flatten import *
 
 __all__ = [
     "Module",
@@ -62,4 +64,10 @@ __all__ = [
     "Transformer",
     
     "Embedding",
+    
+    "Conv1d",
+    "Conv2d",
+    "Conv3d",
+    
+    "Flatten",
 ]
