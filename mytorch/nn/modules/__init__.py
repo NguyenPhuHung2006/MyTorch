@@ -1,6 +1,6 @@
 from .module import Module
 from .sequential import Sequential
-from .linear import Linear
+from .linear import *
 
 from .rnn import *
 from .lstm import *
@@ -14,6 +14,7 @@ from .positional_encoding import *
 from .transformer import *
 from .embedding import Embedding
 from .conv import *
+from .pooling import *
 from .flatten import *
 
 __all__ = [
@@ -21,6 +22,7 @@ __all__ = [
     "Sequential",
     
     "Linear",
+    "LazyLinear",
     
     "RNNCell",
     "RNN",
@@ -70,4 +72,12 @@ __all__ = [
     "Conv3d",
     
     "Flatten",
+    
+    "MaxPool1d",
+    "MaxPool2d",
+    "MaxPool3d",
+    
+    "AvgPool1d",
+    "AvgPool2d",
+    "AvgPool3d",
 ]

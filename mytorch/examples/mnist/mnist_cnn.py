@@ -33,38 +33,51 @@ class MNISTSolver(nn.Module):
     def __init__(self):
         super().__init__()
         self.layers = nn.Sequential(
+            # 28x28
             nn.Conv2d(1, 32, 3),
-            # nn.BatchNorm2d(32),
-            # nn.Dropout2d(0.2),
-            
-            nn.Conv2d(32, 64, 3),
-            # nn.BatchNorm2d(64),
-            # nn.Dropout2d(0.1),
-            
-            nn.Flatten(),
-            
-            nn.Linear(24 * 24 * 64, 32),
-            nn.BatchNorm1d(32),
-            nn.Dropout(0.1),
             nn.ReLU(),
-            
-            nn.Linear(32, 10)
+            nn.MaxPool2d(2),
+
+            # 13x13
+            nn.Conv2d(32, 64, 3),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+
+            # 5x5
+            nn.Conv2d(64, 128, 3),
+            nn.ReLU(),
+
+            # 5x5x128 = 3200
+            nn.Flatten(),
+            nn.LazyLinear(128),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+
+            nn.Linear(128, 10)
         )
         
     def forward(self, x):
         return self.layers(x)
     
-EPOCHS = 2
+EPOCHS = 5
 criterion = nn.CrossEntropyLoss()
 model = MNISTSolver()
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
-for i in range(EPOCHS):
+from tqdm import tqdm
+
+for epoch in range(EPOCHS):
     
     t_cce = 0
     model.train()
     
-    for imgs, labels in train_loader:
+    train_pbar = tqdm(
+        train_loader,
+        desc=f"Epoch {epoch + 1}/{EPOCHS} [Train]",
+        unit="batch",
+    )
+    
+    for imgs, labels in train_pbar:
         logits = model(imgs)
         loss = criterion(logits, labels)
         
@@ -74,25 +87,42 @@ for i in range(EPOCHS):
         
         t_cce += loss.item()
         
+        # Show running average loss in the progress bar
+        train_pbar.set_postfix(loss=f"{loss.item():.4f}")
+    
     avg_t_cce = t_cce / len(train_loader)
     
+    # ---------------- Validation ----------------
     v_cce = 0
     total_acc = 0
     model.eval()
-    for imgs, labels in val_loader:
+    
+    val_pbar = tqdm(
+        val_loader,
+        desc=f"Epoch {epoch + 1}/{EPOCHS} [Val]",
+        unit="batch",
+    )
+    
+    for imgs, labels in val_pbar:
         logits = model(imgs)
         preds = np.argmax(logits.numpy(), axis=-1)
         mask = (labels == preds).numpy()
         total_acc += mask.sum() / len(mask)
         
         loss = criterion(logits, labels)
-        
         v_cce += loss.item()
         
+        val_pbar.set_postfix(loss=f"{loss.item():.4f}")
+    
     avg_v_cce = v_cce / len(val_loader)
     avg_acc = total_acc / len(val_loader)
     
-    print(f"Epochs: {i+1}/{EPOCHS} | Train: {avg_t_cce:.6} | Val: {avg_v_cce:.6} | Acc: {avg_acc * 100:.4}%")
+    print(
+        f"Epoch: {epoch + 1}/{EPOCHS} | "
+        f"Train: {avg_t_cce:.6f} | "
+        f"Val: {avg_v_cce:.6f} | "
+        f"Acc: {avg_acc * 100:.4f}%"
+    )
       
 from PIL import Image
 import os  
@@ -129,4 +159,5 @@ for imgs, labels in val_loader:
 
             idx += 1
 
+print(f"Results written to: {output_dir}")
 
