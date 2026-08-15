@@ -220,6 +220,18 @@ def win2im(
         )
     )
     
+    # ---------------------------------------------------------
+    # in im2win:
+    # prev_windows(N, C, O1,..., On, K1,..., Kn) = x_padded(N, C, O1 + K1,..., On + Kn)
+    # 
+    # -> x_padded(N, C, O1 + K1,..., On + Kn) += prev_windows(N, C, O1,..., On, K1,..., Kn)
+    
+    # sum over all O1,..., On for each K1,..., Kn
+    # we can sum over all K1,..., Kn for each O1,..., On but it will be slower since usually Oi > Ki
+    
+    # there's a '+=' because of the Multivariable Chain Rule. Changing 1 element in x_padded can change many elements in prev_windows
+    # if we change x_padded(N, C, D1,..., Dn), then element prev_windows(N, C, O1,..., On, K1,..., Kn) that satisfies Oi + Ki = Di will change
+    # ---------------------------------------------------------
     for k_pos in np.ndindex(effective_kernel_size):
         x_slices = (
             (slice(None), slice(None))
